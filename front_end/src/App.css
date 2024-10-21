@@ -1,0 +1,197 @@
+#root {
+  max-width: fit-content;
+  margin: 0 auto;
+  text-align: center;
+  max-height: fit-content;
+}
+
+.App {
+  text-align: center;
+  max-width: 1200px; /* 提高页面宽度，让内容不显得太紧凑 */
+  margin: 40px auto;
+}
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+.input-box{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.advice-area{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.aboutus-content{
+  min-height: 100vh; 
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.about-head {
+  display: flex;
+  flex-direction: row; 
+  gap: 20px;  
+  align-items: center;  
+}
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.flex-chat-container {
+  display: flex;
+  flex-direction: row; /* 修正 flex-direction 为 row */
+  gap: 20px; 
+  justify-content: space-between; /* 均匀分布子元素 */
+  margin-top: 20px;
+  width: 100%;
+}
+.chat-box {
+  max-width: 30%; /* 每个 chat-box 的最大宽度 */
+  flex: 1;
+  box-sizing: border-box; /* 确保 padding 和 border 不会超过最大宽度 */
+}
+/* 统一聊天框样式 */
+.gpt-chat-box,
+.ourmodel-chat-box,
+.xxmodel-chat-box {
+  flex: 1;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+/* 消息气泡样式 */
+.message {
+  margin-bottom: 10px;
+  padding: 10px 15px; /* 更好的内边距 */
+  border-radius: 12px; /* 圆角化气泡 */
+  width: fit-content;
+  max-width: 80%; /* 限制气泡的宽度 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
+  word-wrap: break-word; /* 处理长单词换行 */
+}
+
+/* 用户消息 */
+.user {
+  background-color: #d1f0ff; /* 浅蓝色背景 */
+  align-self: flex-end;
+  color: #005b99; /* 深蓝色文字 */
+  border-radius: 12px 12px 0 12px; /* 定制的圆角 */
+}
+
+/* 机器消息 */
+.assistant {
+  background-color: #e8e8e8;
+  align-self: flex-start;
+  color: #555; /* 比较浅的文本颜色 */
+  border-radius: 12px 12px 12px 0;
+}
+
+
+
+
+/* 响应式设计：在屏幕较小时调整布局 */
+@media (max-width: 768px) {
+  .flex-chat-container {
+    flex-direction: column; /* 切换为纵向排列 */
+  }
+
+  button {
+    width: 100%; /* 移动端按钮占满宽度 */
+    margin-top: 10px;
+  }
+
+  input {
+    width: 100%; /* 输入框占满宽度 */
+  }
+}
+.chat-box {
+  max-width: 100%; /* 每个 chat-box 的最大宽度 */
+  flex: 1;
+  box-sizing: border-box; /* 确保 padding 和 border 不会超过最大宽度 */
+}
+.rating-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* 间距调整 */
+  padding: 10px;
+  background-color: #181818; /* 背景颜色 */
+  border-radius: 8px; /* 圆角 */
+  box-shadow: 0 4px 8px rgba(244, 242, 242, 0.1); /* 阴影 */
+}
+
+.rating-section label {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.rating-section select {
+  width: 100%; /* 让选择框充满父元素宽度 */
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 16px;
+  color: #333;
+  transition: border-color 0.3s;
+}
+
+.rating-section select:focus {
+  border-color: #007bff; /* 聚焦时改变边框颜色 */
+  outline: none;
+}
+
+.rating-section select option {
+  font-size: 16px;
+}
+
+@media (min-width: 768px) {
+  .rating-section {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .rating-section label {
+    margin-right: 10px;
+  }
+  
+  .rating-section select {
+    width: auto;
+    min-width: 200px; /* 控制选择框的最小宽度 */
+  }
+}
+.message {
+  white-space: pre-wrap; /* 保持换行和空格 */
+}
+
+
