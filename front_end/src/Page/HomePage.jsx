@@ -55,7 +55,7 @@ function HomePage() {
     setxxmodelLoading(true);
 
     try {
-      const response = await axios.post(ApiUtill.url_root + '/start_session', { query: input });
+      const response = await axios.post(ApiUtill.url_root + 'start_session', { query: input });
       setConversationId(response.data.conversation_id);
     } catch (error) {
       console.error("Error starting session:", error);
@@ -88,7 +88,8 @@ function HomePage() {
           ...prevMessages,
           { role: "assistant", content: gptResponse.data.gpt_response,accommodationRating:gptResponse.data.accommodationRating,
             restaurantAvgRating:gptResponse.data.restaurantAvgRating,
-            attractionsAvgRating:gptResponse.data.attractionsAvgRating }
+            attractionsAvgRating:gptResponse.data.attractionsAvgRating,
+          overallRating:gptResponse.data.overall_rating }
         ]);
       } catch (error) {
         console.error("Error fetching GPT response:", error);
@@ -107,7 +108,8 @@ function HomePage() {
           ...prevMessages,
           { role: "assistant", content: ourmodelResponse.data.our_response,accommodationRating:ourmodelResponse.data.accommodationRating,
             restaurantAvgRating:ourmodelResponse.data.restaurantAvgRating,
-            attractionsAvgRating:ourmodelResponse.data.attractionsAvgRating   }
+            attractionsAvgRating:ourmodelResponse.data.attractionsAvgRating,
+            overallRating:ourmodelResponse.data.overall_rating    }
         ]);
       } catch (error) {
         console.error("Error fetching our model response:", error);
@@ -126,7 +128,8 @@ function HomePage() {
           ...prevMessages,
           { role: "assistant", content: xxmodelResponse.data.xxmodel_response,accommodationRating:xxmodelResponse.data.accommodationRating,
             restaurantAvgRating:xxmodelResponse.data.restaurantAvgRating,
-            attractionsAvgRating:xxmodelResponse.data.attractionsAvgRating   }
+            attractionsAvgRating:xxmodelResponse.data.attractionsAvgRating,
+            overallRating:xxmodelResponse.data.overall_rating    }
         ]);
       } catch (error) {
         console.error("Error fetching xx model response:", error);
@@ -215,7 +218,7 @@ function HomePage() {
       <div className="input-box">
         <Textarea
       label="Enter your question"
-      placeholder="e.g:Please help me plan a trip from St. Petersburg to Rockford spanning 3 days from March 16th to March 18th, 2022. The travel should be planned for a single person with a budget of $1,700."
+      placeholder="e.g.Please help me plan a trip from St. Petersburg to Rockford spanning 3 days from March 16th to March 18th, 2022. The travel should be planned for a single person with a budget of $1,700."
       className="max-w-xs"
       size="lg"
       value={input}
@@ -226,7 +229,7 @@ function HomePage() {
         Submit!
       </Button>
       <div className="note-area">
-      <p>Enter your question and wait for the results (you may temporarily leave the page as generating theresults could take up to 10 minutes,. After reviewing the results, rate the output from each mode!.</p>
+      <p>Enter your question and wait for the results (you may temporarily leave the page as generating the results could take up to 10 minutes, After reviewing the results, rate the output from each mode!.</p>
       </div>
       </div>
 
@@ -260,6 +263,8 @@ function HomePage() {
     <strong>Restaurant Avg Rating: {message.restaurantAvgRating}</strong>
     <br />
     <strong>Attractions Avg Rating: {message.attractionsAvgRating}</strong>
+    <br/>
+    <strong>Overall Rating:{message.overallRating}</strong>
   </div>
 ))}
 
@@ -365,6 +370,8 @@ function HomePage() {
     <strong>Restaurant Avg Rating: {message.restaurantAvgRating}</strong>
     <br />
     <strong>Attractions Avg Rating: {message.attractionsAvgRating}</strong>
+    <br/>
+    <strong>Overall Rating:{message.overallRating}</strong>
   </div>
 ))}
         
@@ -466,6 +473,8 @@ function HomePage() {
     <strong>Restaurant Avg Rating: {message.restaurantAvgRating}</strong>
     <br />
     <strong>Attractions Avg Rating: {message.attractionsAvgRating}</strong>
+    <br/>
+    <strong>Overall Rating:{message.overallRating}</strong>
   </div>
 ))}
         
@@ -559,9 +568,9 @@ function HomePage() {
       )}
 
       <div className="submit-section">
-        <Button onClick={handleSubmitRatings}  >Submit all ratings and feedback.</Button>
+        <Button onClick={handleSubmitRatings}  >Submit all ratings and feedback</Button>
         
-        <Button onClick={handleShowFeedback} >Additional Feedback After Ratings(Option)</Button>
+        <Button onClick={handleShowFeedback} >Additional Feedback After Ratings (Optional)</Button>
       </div>
     </div>
   );

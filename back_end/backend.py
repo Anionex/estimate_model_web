@@ -231,10 +231,11 @@ def ask_ourmodel(messages):
         env['AMADEUS_API_SECRET'] = 'Jxb1Zvr8uyhTtySy'
         env['SERPER_API_KEY'] = '110b1bf3a1e22a4c9b5cecba17514abf4209085c'
         env['GOOGLE_MAPS_API_KEY'] = 'AIzaSyDfbM-JakXbHcJoPei5eYuW6jIgvb95wdQ'
-
+        env['OPENAI_API_KEY'] = 'sk-Vq0Rr2GKwXozgLGB5f156a75944b43719e6bD5EeD66e7784'
+        env['OPENAI_API_BASE']='https://chatapi.onechats.top/v1'
         result = subprocess.run(
             ['D:/code_libary/web_work/estimate_model_web/venv/Scripts/python.exe',
-             '../Our_TravelPlanner-master/react_agent/planner_checker_system.py', input_data],
+             '../ItineraryAgent-master/planner_checker_system.py', input_data],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
