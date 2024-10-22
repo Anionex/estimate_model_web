@@ -80,6 +80,7 @@ if __name__ == '__main__':
     
     import time
 
+    env = os.environ.copy()
     start_time = time.time()
 
     planner = planner_two_stage_in_one
