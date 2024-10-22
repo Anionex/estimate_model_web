@@ -1,4 +1,3 @@
-agently
 altair
 amadeus
 datasets
@@ -6,17 +5,18 @@ flask
 fqdn
 func-timeout
 googlemaps
-gradio
 grpcio-status
 isoduration
-jupyter
 langchain-community
 langchain-google-genai
 langchain-openai
 langfuse
 pip-chill
 simpy
-tavily-python
 translate
 uri-template
 webcolors
+flask_cors
+flask_sqlalchemy
+pymysql
+json5
