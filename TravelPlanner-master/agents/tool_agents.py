@@ -1,8 +1,11 @@
 import re, string, os, sys
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../agents")))
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "tools/planner")))
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../tools/planner")))
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 
 os.environ['OUTPUT_DIR'] = './outputs'
 os.environ['MODEL_NAME'] = 'gpt-4o-2024-08-06-mini'
@@ -74,9 +77,9 @@ class ReactAgent:
                  args,
                  mode: str = 'zero_shot',
                  tools: List[str] = None,
-                 max_steps: int = 30,
-                 max_retries: int = 3,
-                 illegal_early_stop_patience: int = 3,
+                 max_steps: int = 300,
+                 max_retries: int = 5,
+                 illegal_early_stop_patience: int = 30,
                  react_llm_name = 'gpt-4o-2024-08-06',
                  planner_llm_name = 'gpt-4o-2024-08-06',
                 #  logs_path = '../logs/',
@@ -105,7 +108,6 @@ class ReactAgent:
             stop_list = ['\n']
             self.max_token_length = 15000
             self.llm = ChatOpenAI(temperature=0, # 改为0，最大程度防止不一样
-                     max_tokens=256,
                      model_name=react_llm_name,
                      openai_api_key=OPENAI_API_KEY,
                      model_kwargs={"stop": stop_list})
@@ -114,7 +116,6 @@ class ReactAgent:
             stop_list = ['\n']
             self.max_token_length = 30000
             self.llm = ChatOpenAI(temperature=0,
-                     max_tokens=256,
                      model_name=react_llm_name,
                      openai_api_key=OPENAI_API_KEY,
                      model_kwargs={"stop": stop_list})
@@ -239,12 +240,12 @@ class ReactAgent:
 
 
         # examine if the same action has been repeated 3 times consecutively
-        if len(self.last_actions) == 3:
-            print("The same action has been repeated 3 times consecutively. So we stop here.")
-            # self.log_file.write("The same action has been repeated 3 times consecutively. So we stop here.")
-            self.json_log[-1]['state'] = 'same action 3 times repeated'
-            self.finished = True
-            return
+        # if len(self.last_actions) == 3:
+        #     print("The same action has been repeated 3 times consecutively. So we stop here.")
+        #     # self.log_file.write("The same action has been repeated 3 times consecutively. So we stop here.")
+        #     self.json_log[-1]['state'] = 'same action 3 times repeated'
+        #     self.finished = True
+        #     return
 
 
         # action_type, action_arg = parse_action(action)
@@ -735,27 +736,28 @@ def to_string(data) -> str:
     else:
         return str(None)
 
-if __name__ == '__main__':
+def takedown_plan(plan_info):
+        ## 创建log文件夹
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+        ## 打印plan_info到json文件
+    with open("logs/plan_info.json", "w", encoding="utf-8") as file:
+        json.dump(plan_info, file, ensure_ascii=False)
 
+if __name__ == '__main__':
     tools_list = ["notebook","flights","attractions","accommodations","restaurants","googleDistanceMatrix","planner","cities"]
-    for key, value in os.environ.items():
-        print(f"{key}={value}")
-    # model_name = ['gpt-3.5-turbo-1106','gpt-4-1106-preview','gemini','mistral-7B-32K','mixtral','ChatGLM3-6B-32K'][2]
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--set_type", type=str, default="validation")
-    parser.add_argument("--model_name", type=str, default="gpt-4o-2024-08-06")
-    parser.add_argument("--output_dir", type=str, default="./")
-    parser = argparse.ArgumentParser(description="Process some input data.")
-    parser.add_argument('input_data', type=str, help="The input data to process")
+    
+    parser = argparse.ArgumentParser(description="Process travel planning queries.")
+    parser.add_argument("--set_type", type=str, default="validation", help="Set type: validation or test")
+    parser.add_argument("--model_name", type=str, default="gpt-4o-2024-08-06", help="Model name to use")
+    parser.add_argument("--output_dir", type=str, default="./", help="Output directory for results")
+    parser.add_argument('input_data', type=str, help="The input query to process")
+    
     args = parser.parse_args()
-    query = args.input_data  # 从命令行参数获取 input_data
-    args = parser.parse_args()
-    # if args.set_type == 'validation':
-    #     query_data_list  = load_dataset('osunlp/TravelPlanner','validation')['validation']
-    # elif args.set_type == 'test':
-    #     query_data_list  = load_dataset('osunlp/TravelPlanner','test')['test']
-    # numbers = [i for i in range(1,len(query_data_list)+1)]
-    agent = ReactAgent(None, tools=tools_list,max_steps=30,react_llm_name=args.model_name,planner_llm_name=args.model_name)
+    query = args.input_data
+
+    agent = ReactAgent(None, tools=tools_list, max_steps=300, react_llm_name=args.model_name, planner_llm_name=args.model_name)
+
     with get_openai_callback() as cb:
         number = 1
         # for number in tqdm(numbers[:]):
@@ -787,6 +789,8 @@ if __name__ == '__main__':
                 
                 # 打印response到
                 # 先创建目录
+                print("\n==FOR_ESTIMATE==\n")
+                print(str(response))
                 if not os.path.exists("logs"):
                     os.makedirs("logs")
                 with open("logs/plan_info" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json", "w", encoding="utf-8") as file:
@@ -807,6 +811,7 @@ if __name__ == '__main__':
         with open(os.path.join(f'{args.output_dir}/{args.set_type}/generated_plan_{number}.json'), 'w') as f:
             json.dump(result, f, indent=4)
         
-    print(cb)
+    # print(cb)
+
 
 

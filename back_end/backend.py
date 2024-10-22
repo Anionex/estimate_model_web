@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
 # 配置数据库
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:root@localhost/model_conversation"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:ydw20040928Z#@localhost/modeltest"
 db = SQLAlchemy(app)
 
 
@@ -78,7 +78,7 @@ def ask_gpt():
                 'attractionsAvgRating': attractions_avg_rate,
                 'restaurantAvgRating': restaurant_avg_rate,
                 'accommodationRating': accommodation_rate,
-                'ovrall_rating': overall_avg_rate,
+                'overall_rating': overall_avg_rate,
                 }
     else:
         return jsonify({'error': 'Invalid session ID!'})
@@ -87,7 +87,7 @@ def ask_gpt():
 @app.route('/ask_xxmodel', methods=['POST'])
 def ask_trip():
     data = request.json
-
+    print("data fu1",data)
     messages = next(item["content"] for item in data["query"] if item["role"] == "user")
     conversation_id = data.get('conversation_id')
 
@@ -95,13 +95,15 @@ def ask_trip():
     if conversation:
 
         trip_response = ask_tripadvisermodel(messages)
-        trip_response_content = trip_response.get("itinerary")
-        trip_response_rating=trip_response.get("rating info")
+        print("trip_response: ",trip_response)
+        trip_response_content = trip_response.get("itinerary", "something went wrong")
+        
+        trip_response_rating=trip_response.get("average_rating", "something went wrong")
 
         attractions_avg_rate=trip_response_rating.get("Attractions")
         restaurant_avg_rate=trip_response_rating.get("Restaurants")
         accommodation_rate=trip_response_rating.get("Accommodations")
-        overall_avg_rate=trip_response_rating.get("overall")
+        overall_avg_rate=trip_response_rating.get("Overall")
 
         conversation.xxmodel_response = trip_response_content
         db.session.commit()
@@ -110,7 +112,7 @@ def ask_trip():
                 'attractionsAvgRating': attractions_avg_rate,
                 'restaurantAvgRating': restaurant_avg_rate,
                 'accommodationRating': accommodation_rate,
-                'ovrall_rating': overall_avg_rate,
+                'overall_rating': overall_avg_rate,
                 }
     else:
         return jsonify({'error': 'Invalid  ID!'})
@@ -127,9 +129,26 @@ def ask_our():
     if conversation:
         our_response = ask_ourmodel(query)
         print(our_response)
+        
+        
+        our_response_content = our_response.get("itinerary")
+        our_response_rating=our_response.get("average_rating")
+
+        attractions_avg_rate=our_response_rating.get("Attractions")
+        restaurant_avg_rate=our_response_rating.get("Restaurants")
+        accommodation_rate=our_response_rating.get("Accommodations")
+        overall_avg_rate=our_response_rating.get("Overall")
+
+        conversation.our_response = our_response_content
         db.session.commit()
 
-        return jsonify(our_response)
+        return {'our_response': our_response_content,
+                'attractionsAvgRating': attractions_avg_rate,
+                'restaurantAvgRating': restaurant_avg_rate,
+                'accommodationRating': accommodation_rate,
+                'overall_rating': overall_avg_rate,
+                }
+        
     else:
         return jsonify({'error': 'Invalid session ID!'}), 404
 
@@ -189,6 +208,9 @@ def ask_gptmodel(messages):
 
 
 def ask_tripadvisermodel(messages):
+    """
+    因为被直接当成了json，所以需要用json.loads()来解析先
+    """
     try:
         input_data = messages
         env = os.environ.copy()
@@ -198,9 +220,14 @@ def ask_tripadvisermodel(messages):
         env['GOOGLE_MAPS_API_KEY'] = 'AIzaSyDfbM-JakXbHcJoPei5eYuW6jIgvb95wdQ'
 
         try:
+            conda_env_name = "estimate_web"
+            conda_activate_cmd = f"conda activate {conda_env_name} && "
+            python_script = "../TravelPlanner-master/agents/tool_agents.py"
+            
+            print("命令：", f'{conda_activate_cmd} python {python_script} "{input_data}"')
             result = subprocess.run(
-                ['D:/code_libary/web_work/estimate_model_web/venv/Scripts/python.exe',
-                 '../TravelPlanner-master/agents/tool_agents.py', input_data],
+                f'{conda_activate_cmd} python {python_script} "{input_data}"',
+                shell=True,
                 capture_output=True,
                 text=True,
                 env=env,
@@ -208,24 +235,51 @@ def ask_tripadvisermodel(messages):
             )
 
             if result.returncode != 0:
-                print("Error output:", result.stderr)
-                raise Exception(f"Subprocess failed with return code {result.returncode}")
+                print("错误输出:", result.stderr)
+                return {
+                    "itinerary": "Model failed to complete the task.",
+                    "average_rating": {
+                        "Attractions": None,
+                        "Restaurants": None,
+                        "Accommodations": None,
+                        "Overall": None
+                    }
+                }
 
-            output_data = result.stdout.strip()
-
-            return output_data
-
+            # 从JSON文件读取数据
+            json_file_path = r"..\TravelPlanner-master\evaluation\logs\plan_info.json"
+            with open(json_file_path, 'r', encoding='utf-8') as json_file:
+                json_data = json.load(json_file)
+            
+            return json_data
+    
         except subprocess.TimeoutExpired:
-            return {"source": "xxmodel", "response": "Our server timed out, and something went wrong with our model."}
+            return {
+                "itinerary": "Our server timed out, and something went wrong with our model.",
+                "average_rating": {
+                    "Attractions": None,
+                    "Restaurants": None,
+                    "Accommodations": None,
+                    "Overall": None
+                }
+            }
 
     except Exception as e:
-        return str(e)
+        return {
+            "itinerary": "Model failed to complete the task.",
+            "average_rating": {
+                "Attractions": None,
+                "Restaurants": None,
+                "Accommodations": None,
+                "Overall": None
+            }
+        }
 
 
 def ask_ourmodel(messages):
     try:
         input_data = messages
-        print(input_data)
+        print("input_data: ", input_data)
         env = os.environ.copy()
         env['AMADEUS_API_KEY'] = 'i6eqZP984Xmcpj6Fu16MGAA31cnWOy8j'
         env['AMADEUS_API_SECRET'] = 'Jxb1Zvr8uyhTtySy'
@@ -233,9 +287,15 @@ def ask_ourmodel(messages):
         env['GOOGLE_MAPS_API_KEY'] = 'AIzaSyDfbM-JakXbHcJoPei5eYuW6jIgvb95wdQ'
         env['OPENAI_API_KEY'] = 'sk-Vq0Rr2GKwXozgLGB5f156a75944b43719e6bD5EeD66e7784'
         env['OPENAI_API_BASE']='https://chatapi.onechats.top/v1'
+        
+        # 修改这里以使用 Conda 环境
+        conda_env_name = "estimate_web"  # 替换为您的 Conda 环境名称
+        conda_activate_cmd = f"conda activate {conda_env_name} && "
+        python_script = "../ItineraryAgent-master/planner_checker_system.py"
+        
         result = subprocess.run(
-            ['D:/code_libary/web_work/estimate_model_web/venv/Scripts/python.exe',
-             '../ItineraryAgent-master/planner_checker_system.py', input_data],
+            f'{conda_activate_cmd} python {python_script} "{input_data}"',
+            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -245,11 +305,22 @@ def ask_ourmodel(messages):
 
         if result.returncode != 0:
             print("Error output:", result.stderr)
-            raise Exception(f"Subprocess failed with return code {result.returncode}")
+            return {
+                "itinerary": "Model failed to complete the task.",
+                "average_rating": {
+                    "Attractions": None,
+                    "Restaurants": None,
+                    "Accommodations": None,
+                    "Overall": None
+                }
+            }
 
-        output_data = result.stdout.strip()
-
-        return output_data
+        # 从JSON文件读取数据
+        json_file_path = r"..\ItineraryAgent-master\agents\logs\plan_info.json"
+        with open(json_file_path, 'r', encoding='utf-8') as json_file:
+            json_data = json.load(json_file)
+        
+        return json_data
 
     except subprocess.TimeoutExpired:
         return {"source": "ourmodel", "response": "Our server timed out, and something went wrong with our model."}

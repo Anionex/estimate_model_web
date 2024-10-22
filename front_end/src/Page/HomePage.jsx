@@ -46,9 +46,15 @@ function HomePage() {
   const handleSendMessage = async () => {
     if (input.trim() === "") return;
 
-    const message = {"role": "system", "content": "请详细规划所述路线。要求遵循以下具体规则：1) 每个旅行日必须有详细的活动安排，包括主要景点和交通方式。2) 确保提供的住宿建议方便且符合预算。3) 给出至少一个餐厅建议，并注明特色菜。4) 在结尾部分，必须准确评估并给出你的计划的Accommodation Rating, Attractions Average Rating, Restaurant Average Rating, Overall Rating的值，满分为5，并以x/5的格式表示。注意：不得更改输出的名字，确保这些评级信息单独列出在输出的最后一部分。严格执行上述指令，将结果按要求格式化。"};
-    setNewMessage(message);
-
+    const systemMessage = {"role": "system", "content": "请详细规划所述路线。要求遵循以下具体规则：1) 每个旅行日必须有详细的活动安排，包括主要景点和交通方式。2) 确保提供的住宿建议方便且符合预算。3) 给出至少一个餐厅建议，并注明特色菜。4) 在结尾部分，必须准确评估并给出你的计划的Accommodation Rating, Attractions Average Rating, Restaurant Average Rating, Overall Rating的值，满分为5，并以x/5的格式表示。注意：不得更改输出的名字，确保这些评级信息单独列出在输出的最后一部分。严格执行上述指令，将结果按要求格式化。"};
+    const userMessage = {"role": "user", "content": input};
+    
+    setNewMessage({
+      gpt: [systemMessage, userMessage],
+      ourmodel: [userMessage],
+      xxmodel: [userMessage]
+    });
+    
 
     setgptLoading(true);
     setourmodelLoading(true);
@@ -63,7 +69,7 @@ function HomePage() {
       setourmodelLoading(false);
       setxxmodelLoading(false); 
     } finally {
-      setInput("");
+      //setInput("");
       document.querySelector('input[type="text"]').focus();
     }
   };
@@ -77,11 +83,11 @@ function HomePage() {
 
   const fetchAllModelResponses = async (newMessage, conversationId) => {
     try {
-      // 第一个请求：ChatGPT
+      // ChatGPT 请求
       setgptLoading(true);
       try {
         const gptResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_gpt, {
-          query: [...gptmessages, newMessage],
+          query: newMessage.gpt,
           conversation_id: conversationId,
         });
         setgptMessages((prevMessages) => [
@@ -94,14 +100,14 @@ function HomePage() {
       } catch (error) {
         console.error("Error fetching GPT response:", error);
       } finally {
-        setgptLoading(false); 
+        setgptLoading(false);
       }
   
-      // 第二个请求：我们的模型
+      // 我们的模型请求
       setourmodelLoading(true);
       try {
         const ourmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_ourmodel, {
-          query: [...ourmodelmessages, newMessage],
+          query: newMessage.ourmodel,
           conversation_id: conversationId,
         });
         setourmodelMessages((prevMessages) => [
@@ -114,14 +120,14 @@ function HomePage() {
       } catch (error) {
         console.error("Error fetching our model response:", error);
       } finally {
-        setourmodelLoading(false); // 停止我们的模型的加载指示
+        setourmodelLoading(false);
       }
   
-      // 第三个请求：xx模型
+      // xx模型请求
       setxxmodelLoading(true);
       try {
         const xxmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_xxmodel, {
-          query: [...xxmodelmessages, newMessage],
+          query: newMessage.xxmodel,
           conversation_id: conversationId,
         });
         setxxmodelMessages((prevMessages) => [
@@ -134,12 +140,11 @@ function HomePage() {
       } catch (error) {
         console.error("Error fetching xx model response:", error);
       } finally {
-        setxxmodelLoading(false); // 停止 xx 模型的加载指示
+        setxxmodelLoading(false);
       }
   
     } catch (error) {
       console.error("Error in fetchAllModelResponses:", error);
-      setxxmodelLoading(false);
     }
   };
   

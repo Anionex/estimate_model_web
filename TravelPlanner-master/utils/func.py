@@ -1,6 +1,5 @@
 import json
 import re
-import gradio as gr
 import os
 
 def load_line_json_data(filename):

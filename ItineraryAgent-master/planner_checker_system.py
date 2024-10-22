@@ -2,6 +2,8 @@ from datetime import datetime
 import json
 import sys
 import os
+
+import json5
 from config import *
 from agents.planner_two_stage_in_one import planner_two_stage_in_one
 from agents.plan_checker import PlanChecker
@@ -76,8 +78,16 @@ def read_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
 
+def takedown_plan(plan_info):
+        ## 创建log文件夹
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+        ## 打印plan_info到json文件
+    with open("logs/plan_info.json", "w", encoding="utf-8") as file:
+        json.dump(plan_info, file, ensure_ascii=False)
+
 if __name__ == '__main__':
-    
+
     import time
 
     env = os.environ.copy()
@@ -86,7 +96,7 @@ if __name__ == '__main__':
     planner = planner_two_stage_in_one
     checker = PlanChecker()
     
-    query = read_file("example_query.txt")
+    query = sys.argv[1]
     plan_info = planner_checker_loop(query)
     print("=====\nFinal Itinerary:\n=====")
     print(str(plan_info))

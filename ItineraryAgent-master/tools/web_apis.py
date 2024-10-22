@@ -271,8 +271,13 @@ def get_distance_matrix(origin, destination, mode, language=GLOBAL_LANGUAGE):
                                            destinations=(destination_lat, destination_lng),
                                            mode=mode,
                                            language=language)
-    duration = distance_matrix['rows'][0]['elements'][0]['duration']['text']
-    distance = distance_matrix['rows'][0]['elements'][0]['distance']['text']
+    try:
+        duration = distance_matrix['rows'][0]['elements'][0]['duration']['text']
+        distance = distance_matrix['rows'][0]['elements'][0]['distance']['text']
+    except Exception as e:
+        print(e)
+        duration = "N/A"
+        distance = "N/A"
     return f"{mode.capitalize()}, from {origin} to {destination}, duration: {duration}, distance: {distance}"
 
 AMADEUS_MAX_LENGTH = 28
