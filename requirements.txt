@@ -20,3 +20,4 @@ flask_cors
 flask_sqlalchemy
 pymysql
 json5
+diskcache
