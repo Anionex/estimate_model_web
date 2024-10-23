@@ -232,7 +232,7 @@ def ask_tripadvisermodel(messages):
                 stderr=subprocess.PIPE,
                 text=True,
                 env=env,
-                timeout=600
+                timeout=1200
             )
 
             if result.returncode != 0:
@@ -301,7 +301,7 @@ def ask_ourmodel(messages):
             stderr=subprocess.PIPE,
             text=True,
             env=env,
-            timeout=600
+            timeout=1200
         )
 
         if result.returncode != 0:
