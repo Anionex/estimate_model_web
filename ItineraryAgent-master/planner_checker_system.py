@@ -115,5 +115,7 @@ if __name__ == '__main__':
     with open("logs/plan_info" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json", "w", encoding="utf-8") as file:
         json.dump(plan_info, file, ensure_ascii=False)
 
+    
+    takedown_plan(plan_info)
     end_time = time.time()
     print(f"Runtime: {end_time - start_time:.2f} seconds")
