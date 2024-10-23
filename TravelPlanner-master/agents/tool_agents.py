@@ -39,6 +39,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 import argparse
 from datasets import load_dataset
 import os
+from agents.tool_funcs import get_city, get_flights, get_attractions, get_accommodations, google_search, get_restaurants, get_google_distance_matrix
 
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
@@ -71,6 +72,13 @@ def catch_openai_api_error():
         print("AuthenticationError")
     else:
         print("API error:", error)
+
+class ToolWrapper:
+    def __init__(self, func):
+        self.func = func
+
+    def run(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
 
 class ReactAgent:
     def __init__(self,
@@ -159,9 +167,6 @@ class ReactAgent:
         self.illegal_early_stop_patience = illegal_early_stop_patience
 
         self.tools = self.load_tools(tools, planner_model_name=planner_llm_name)
-        
-        # 应用monkey patch
-        self.apply_monkey_patches()
         
         self.max_retries = max_retries
         self.retry_record = {key: 0 for key in self.tools}
@@ -297,7 +302,7 @@ class ReactAgent:
                         self.scratchpad += self.current_observation 
                         self.__reset_record()
                         self.json_log[-1]['state'] = f'Successful'
-                # 错误处理，告诉模型错在哪儿
+                # ��误处理，告诉模型错在哪儿
                 except DateError:
                     self.retry_record['flights'] += 1
                     self.current_observation = f"'{action_arg.split(', ')[2]}' is not in the format YYYY-MM-DD"
@@ -555,17 +560,30 @@ class ReactAgent:
 
     def load_tools(self, tools: List[str], planner_model_name=None) -> Dict[str, Any]:
         """
-        Load the tools from the given list of tool names dynamically initially
+        加载工具函数并包装它们
         """
-        tools_map = {}
-        for tool_name in tools:
-            module = importlib.import_module("tools.{}.apis".format(tool_name))
-            
-            # Avoid instantiating the planner tool twice 
-            if tool_name == 'planner' and planner_model_name is not None:
-                tools_map[tool_name] = getattr(module, tool_name[0].upper()+tool_name[1:])(model_name=planner_model_name)
+        tools_map = {
+            'flights': ToolWrapper(get_flights),
+            'accommodations': ToolWrapper(get_accommodations),
+            'attractions': ToolWrapper(get_attractions),
+            'restaurants': ToolWrapper(get_restaurants),
+            'googleDistanceMatrix': ToolWrapper(get_google_distance_matrix),
+            'cities': ToolWrapper(get_city)
+        }
+        
+        # 处理 planner 工具
+        if 'planner' in tools:
+            module = importlib.import_module("tools.planner.apis")
+            if planner_model_name is not None:
+                tools_map['planner'] = getattr(module, 'Planner')(model_name=planner_model_name)
             else:
-                tools_map[tool_name] = getattr(module, tool_name[0].upper()+tool_name[1:])()
+                tools_map['planner'] = getattr(module, 'Planner')()
+        
+        # 处理 notebook 工具
+        if 'notebook' in tools:
+            module = importlib.import_module("tools.notebook.apis")
+            tools_map['notebook'] = getattr(module, 'Notebook')()
+
         return tools_map
 
     def load_city(self, city_set_path: str) -> List[str]:
@@ -578,16 +596,6 @@ class ReactAgent:
             city_set.append(unit)
         return city_set
      
-    def apply_monkey_patches(self):
-        from agents.tool_funcs import get_city, get_flights, get_attractions, get_accommodations, google_search, get_restaurants, get_google_distance_matrix
-        # 替换所有run原有方法
-        self.tools['flights'].run = get_flights
-        self.tools['accommodations'].run = get_accommodations
-        self.tools['attractions'].run = get_attractions
-        self.tools['restaurants'].run = get_restaurants
-        self.tools['googleDistanceMatrix'].run = get_google_distance_matrix
-        self.tools['cities'].run = get_city
-        
 
 ### String Stuff ###
 gpt2_enc = tiktoken.encoding_for_model("text-davinci-003")
@@ -812,6 +820,8 @@ if __name__ == '__main__':
             json.dump(result, f, indent=4)
         
     # print(cb)
+
+
 
 
 
