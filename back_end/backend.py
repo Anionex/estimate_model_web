@@ -87,8 +87,7 @@ def ask_gpt():
 @app.route('/ask_xxmodel', methods=['POST'])
 def ask_trip():
     data = request.json
-
-    messages = next(item["content"] for item in data["query"] if item["role"] == "user")
+    messages = data.get('query',"")
     conversation_id = data.get('conversation_id')
 
     conversation = ModelEstimate.query.get(conversation_id)
@@ -119,17 +118,31 @@ def ask_trip():
 @app.route('/ask_ourmodel', methods=['POST'])
 def ask_our():
     data = request.json
-    query = data.get('query', "")
+    messages = data.get('query', "")
     conversation_id = data.get('conversation_id')
 
     conversation = ModelEstimate.query.get(conversation_id)
 
     if conversation:
-        our_response = ask_ourmodel(query)
+        our_response = ask_ourmodel(messages)
         print(our_response)
         db.session.commit()
+        our_response_content = our_response.get("itinerary")
+        our_response_rating = our_response.get("rating info")
 
-        return jsonify(our_response)
+        attractions_avg_rate = our_response_rating.get("Attractions")
+        restaurant_avg_rate = our_response_rating.get("Restaurants")
+        accommodation_rate = our_response_rating.get("Accommodations")
+        overall_avg_rate = our_response_rating.get("overall")
+
+        conversation.ourmodel_response = our_response_content
+        db.session.commit()
+        return  {'ourmodel_response': our_response,
+                'attractionsAvgRating': attractions_avg_rate,
+                'restaurantAvgRating': restaurant_avg_rate,
+                'accommodationRating': accommodation_rate,
+                'ovrall_rating': overall_avg_rate,
+                }
     else:
         return jsonify({'error': 'Invalid session ID!'}), 404
 

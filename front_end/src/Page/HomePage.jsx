@@ -30,7 +30,7 @@ function HomePage() {
       representativeRating: null,
     },
     conversation_id: null,
-    feedback:feedback,
+    feedback:"",
   });
 
 
@@ -42,11 +42,14 @@ function HomePage() {
   const handleInputChange = (e) => {
     setInput(e.target.value);
   };
+ 
 
   const handleSendMessage = async () => {
     if (input.trim() === "") return;
 
-    const message = {"role": "system", "content": "请详细规划所述路线。要求遵循以下具体规则：1) 每个旅行日必须有详细的活动安排，包括主要景点和交通方式。2) 确保提供的住宿建议方便且符合预算。3) 给出至少一个餐厅建议，并注明特色菜。4) 在结尾部分，必须准确评估并给出你的计划的Accommodation Rating, Attractions Average Rating, Restaurant Average Rating, Overall Rating的值，满分为5，并以x/5的格式表示。注意：不得更改输出的名字，确保这些评级信息单独列出在输出的最后一部分。严格执行上述指令，将结果按要求格式化。"};
+    const message = [{"role": "system", "content": "请详细规划所述路线。要求遵循以下具体规则：1) 每个旅行日必须有详细的活动安排，包括主要景点和交通方式。2) 确保提供的住宿建议方便且符合预算。3) 给出至少一个餐厅建议，并注明特色菜。4) 在结尾部分，必须准确评估并给出你的计划的Accommodation Rating, Attractions Average Rating, Restaurant Average Rating, Overall Rating的值，满分为5，并以x/5的格式表示。注意：不得更改输出的名字，确保这些评级信息单独列出在输出的最后一部分。严格执行上述指令，将结果按要求格式化。"},
+      {"role": "user", "content": input.trim()}
+    ];
     setNewMessage(message);
 
 
@@ -101,7 +104,7 @@ function HomePage() {
       setourmodelLoading(true);
       try {
         const ourmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_ourmodel, {
-          query: [...ourmodelmessages, newMessage],
+          query:input,
           conversation_id: conversationId,
         });
         setourmodelMessages((prevMessages) => [
@@ -121,7 +124,7 @@ function HomePage() {
       setxxmodelLoading(true);
       try {
         const xxmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_xxmodel, {
-          query: [...xxmodelmessages, newMessage],
+          query: input,
           conversation_id: conversationId,
         });
         setxxmodelMessages((prevMessages) => [
@@ -145,10 +148,12 @@ function HomePage() {
   
 
   const handleRatingChange = (model, ratingType, value) => {
+    const numericalValue = parseInt(value.replace(/[^\d]/g, ''), 10) || null;
     setRatings((prevRatings) => ({
       ...prevRatings,
-      [model]: {
-        [ratingType]: value
+    [model]: {
+      ...prevRatings[model], 
+      [ratingType]: numericalValue
       }
     }));
   };
@@ -161,6 +166,11 @@ function HomePage() {
   };
 
   const handleSubmitRatings = async () => {
+    console.log(ratings)
+    if (ratings.conversation_id === null) {
+      alert("Conversation hasn't started.");
+      return;
+  }
     if (!areAllRatingsComplete()) {
       alert("Please rate all criteria!");
       return;
@@ -226,10 +236,10 @@ function HomePage() {
     />
      
         <Button onClick={handleSendMessage} radius="full">
-        Submit!
+        Submit
       </Button>
       <div className="note-area">
-      <p>Enter your question and wait for the results (you may temporarily leave the page as generating the results could take up to 10 minutes, After reviewing the results, rate the output from each mode!.</p>
+      <p>Enter your question and wait for the results (you may temporarily leave the page as generating the results could take up to 10 minutes, After reviewing the results, rate the output for each plan.</p>
       </div>
       </div>
 
@@ -280,7 +290,7 @@ function HomePage() {
           label="Select rating"
           placeholder="Select rating"
           value={ratings.gpt.routeReasonabilityRating || 0}
-          onChange={(e) => handleRatingChange('gpt', 'routeReasonabilityRating', e)}
+          onChange={(e) => handleRatingChange('gpt', 'routeReasonabilityRating', e.target.value)}
         >
            <SelectItem value={0}>0</SelectItem>
           <SelectItem value={1}>1</SelectItem>
@@ -302,7 +312,7 @@ function HomePage() {
           label="Select rating"
           placeholder="Select rating"
           value={ratings.gpt.representativeRating || 0}
-          onChange={(e) => handleRatingChange('gpt', 'representativeRating', e)}
+          onChange={(e) => handleRatingChange('gpt', 'representativeRating', e.target.value)}
         >
           <SelectItem value={0}>0</SelectItem>
           <SelectItem value={1}>1</SelectItem>
@@ -323,7 +333,7 @@ function HomePage() {
           label="Select rating"
           placeholder="Select rating"
           value={ratings.gpt.overallRating || 0}
-          onChange={(e) => handleRatingChange('gpt', 'overallRating', e)}
+          onChange={(e) => handleRatingChange('gpt', 'overallRating', e.target.value)}
         >
            <SelectItem value={0}>0</SelectItem>
           <SelectItem value={1}>1</SelectItem>
@@ -490,11 +500,11 @@ function HomePage() {
           label="Select rating"
           placeholder="Select rating"
           value={ratings.ourmodel.routeReasonabilityRating || ''}
-          onChange={(e) => handleRatingChange('ourmodel', 'routeReasonabilityRating', e.target.value)}
+          onChange={(e) => handleRatingChange('xxmodel', 'routeReasonabilityRating', e.target.value)}
         >
-           <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
+          <SelectItem value={0}>0</SelectItem>
           <SelectItem value={2}>2</SelectItem>
+          <SelectItem value={1}>1</SelectItem>
           <SelectItem value={3}>3</SelectItem>
           <SelectItem value={4}>4</SelectItem>
           <SelectItem value={5}>5</SelectItem>
@@ -553,17 +563,24 @@ function HomePage() {
 
       {feedbackVisible && (
       <div className="advice-area">
-        <Textarea
-        label="Description"
-        variant="bordered"
-        placeholder="Enter your description"
-        disableAnimation
-        disableAutosize
-        classNames={{
-          base: "max-w-xs",
-          input: "resize-y min-h-[40px]",
-        }}
-      />
+          <Textarea
+      label="Description"
+      variant="bordered"
+      placeholder="Enter your description"
+      disableAnimation
+      disableAutosize
+      classNames={{
+        base: "max-w-xs",
+        input: "resize-y min-h-[40px]",
+      }}
+      value={ratings.feedback}
+      onChange={(e) => 
+        setRatings((prevRatings) => ({
+          ...prevRatings,
+          feedback: e.target.value  
+        }))
+      }
+/>
       </div>
       )}
 
