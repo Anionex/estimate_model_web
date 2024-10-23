@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
 # 配置数据库
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:ydw20040928Z#@localhost/modeltest"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:modeltest@localhost/modeltest"
 db = SQLAlchemy(app)
 
 
