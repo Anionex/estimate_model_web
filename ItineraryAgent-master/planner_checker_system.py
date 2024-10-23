@@ -79,15 +79,17 @@ def read_file(file_path):
         return file.read()
 
 def takedown_plan(plan_info):
-        ## 创建log文件夹
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-        ## 打印plan_info到json文件
-    with open("logs/plan_info.json", "w", encoding="utf-8") as file:
+    ## 创建log文件夹
+    current_dir = os.path.dirname(__file__)
+    log_dir = os.path.abspath(os.path.join(current_dir, 'logs'))
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    ## 打印plan_info到json文件
+    with open(os.path.join(log_dir, "plan_info.json"), "w", encoding="utf-8") as file:
         json.dump(plan_info, file, ensure_ascii=False)
 
 if __name__ == '__main__':
-
+    
     import time
 
     env = os.environ.copy()

@@ -745,11 +745,13 @@ def to_string(data) -> str:
         return str(None)
 
 def takedown_plan(plan_info):
-        ## 创建log文件夹
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-        ## 打印plan_info到json文件
-    with open("logs/plan_info.json", "w", encoding="utf-8") as file:
+    ## 创建log文件夹
+    current_dir = os.path.dirname(__file__)
+    log_dir = os.path.abspath(os.path.join(current_dir, '..', 'logs'))
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    ## 打印plan_info到json文件
+    with open(os.path.join(log_dir, "plan_info.json"), "w", encoding="utf-8") as file:
         json.dump(plan_info, file, ensure_ascii=False)
 
 if __name__ == '__main__':
@@ -795,29 +797,9 @@ if __name__ == '__main__':
                     "average_rating": rating_info
                     }
                 
-                # 打印response到
-                # 先创建目录
-                print("\n==FOR_ESTIMATE==\n")
-                print(str(response))
-                if not os.path.exists("logs"):
-                    os.makedirs("logs")
-                with open("logs/plan_info" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json", "w", encoding="utf-8") as file:
-                    json.dump(response, file, ensure_ascii=False)
-                break
+                # 打印response到plan_info中
+                takedown_plan(response)
         
-        if planner_results == 'Max Token Length Exceeded.':
-            result[-1][f'{args.model_name}_two-stage_results_logs'] = scratchpad 
-            result[-1][f'{args.model_name}_two-stage_results'] = 'Max Token Length Exceeded.'
-            action_log[-1]['state'] = 'Max Token Length of Planner Exceeded.'
-            result[-1][f'{args.model_name}_two-stage_action_logs'] = action_log
-        else:
-            result[-1][f'{args.model_name}_two-stage_results_logs'] = scratchpad 
-            result[-1][f'{args.model_name}_two-stage_results'] = planner_results
-            result[-1][f'{args.model_name}_two-stage_action_logs'] = action_log
-
-        # write to json file
-        with open(os.path.join(f'{args.output_dir}/{args.set_type}/generated_plan_{number}.json'), 'w') as f:
-            json.dump(result, f, indent=4)
         
     # print(cb)
 
