@@ -221,7 +221,7 @@ def ask_tripadvisermodel(messages):
 
         try:
             conda_env_name = "estimate_web"
-            conda_activate_cmd = f"conda activate {conda_env_name} && "
+            conda_activate_cmd = f"conda init && conda activate {conda_env_name} && "
             python_script = "../TravelPlanner-master/agents/tool_agents.py"
             
             print("命令：", f'{conda_activate_cmd} python {python_script} "{input_data}"')
@@ -290,7 +290,7 @@ def ask_ourmodel(messages):
         
         # 修改这里以使用 Conda 环境
         conda_env_name = "estimate_web"  # 替换为您的 Conda 环境名称
-        conda_activate_cmd = f"conda activate {conda_env_name} && "
+        conda_activate_cmd = f"conda init && conda activate {conda_env_name} && "
         python_script = "../ItineraryAgent-master/planner_checker_system.py"
         
         result = subprocess.run(
