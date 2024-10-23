@@ -784,7 +784,7 @@ if __name__ == '__main__':
         while True:
             planner_results, scratchpad, action_log  = agent.run(query)
             if planner_results != None:
-                print(planner_results)
+                print("planner_results: ", planner_results)
                 
                 ## 进行rating和budget的计算
                 from tools.utils import calculate_average_rating_for_raw, calculate_budget_for_raw

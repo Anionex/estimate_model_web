@@ -23,8 +23,10 @@ current_dir = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(os.path.join(current_dir, '..')))
 
 
-# 设置缓存
-cache = Cache('../cache_directory')
+# 设置缓存位置为当前文件的上两级目录
+current_dir = os.path.dirname(__file__)
+cache_dir = os.path.abspath(os.path.join(current_dir, '..', '..', 'cache_directory'))
+cache = Cache(cache_dir)
 
 # 定义磁盘缓存装饰器
 def disk_cache(expire=timedelta(days=7)):
