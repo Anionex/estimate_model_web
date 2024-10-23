@@ -248,7 +248,7 @@ def ask_tripadvisermodel(messages):
                 }
 
             # 从JSON文件读取数据
-            json_file_path = r"TravelPlanner-master\logs\plan_info.json"
+            json_file_path = r"..\TravelPlanner-master\logs\plan_info.json"
             with open(json_file_path, 'r', encoding='utf-8') as json_file:
                 json_data = json.load(json_file)
             
@@ -317,7 +317,7 @@ def ask_ourmodel(messages):
             }
 
         # 从JSON文件读取数据
-        json_file_path = r"ItineraryAgent-master\logs\plan_info.json"
+        json_file_path = r"..\ItineraryAgent-master\logs\plan_info.json"
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
             json_data = json.load(json_file)
         
