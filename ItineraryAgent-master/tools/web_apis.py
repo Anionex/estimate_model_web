@@ -26,7 +26,7 @@ from config import *
 from tools.utils import translate_city, get_restaurant_average_cost, get_entity_attribute
 
 # 设置缓存
-cache = Cache('./cache_directory')
+cache = Cache('../cache_directory')
 
 # 定义磁盘缓存装饰器
 def disk_cache(expire=timedelta(days=7)):
