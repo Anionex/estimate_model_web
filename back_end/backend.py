@@ -324,8 +324,15 @@ def ask_ourmodel(messages):
         return json_data
 
     except subprocess.TimeoutExpired:
-        return {"source": "ourmodel", "response": "Our server timed out, and something went wrong with our model."}
-
+        return {
+            "itinerary": "Our server timed out, and something went wrong with our model.",
+            "average_rating": {
+                "Attractions": None,
+                "Restaurants": None,
+                "Accommodations": None,
+                "Overall": None
+            }
+        }
     except Exception as e:
         return str(e)
 
