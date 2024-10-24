@@ -242,7 +242,7 @@ function HomePage() {
         Submit
       </Button>
       <div className="note-area">
-      <p>Enter your question and wait for the results (you may temporarily leave the page as generating the results could take up to 10 minutes, After reviewing the results, rate the output for each plan.</p>
+      <p>Enter your question and wait for the results (you may temporarily leave the page as generating the results could take up to 10 minutes). After reviewing the results, rate the output for each plan.</p>
       </div>
       </div>
 
@@ -288,7 +288,7 @@ function HomePage() {
     
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Route Reasonableness</p>
+        <p className="block text-sm font-medium text-gray-700">Route Reasonability</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -310,7 +310,7 @@ function HomePage() {
       </div>
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Place Representativeness</p>
+        <p className="block text-sm font-medium text-gray-700">Representativeness</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -331,7 +331,7 @@ function HomePage() {
         </Select>
           </div>
           <div className="flex flex-col max-w-xs">
-    <p className="block text-sm font-medium text-gray-700">Overall rating:</p>
+    <p className="block text-sm font-medium text-gray-700">Overall rating</p>
             <Select
           label="Select rating"
           placeholder="Select rating"
@@ -393,7 +393,7 @@ function HomePage() {
       </CardBody>
     </Card>
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Route Reasonableness</p>
+        <p className="block text-sm font-medium text-gray-700">Route Reasonability</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -415,7 +415,7 @@ function HomePage() {
       </div>
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Place Representativeness:</p>
+        <p className="block text-sm font-medium text-gray-700">Representativeness</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -498,7 +498,7 @@ function HomePage() {
     
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Route Reasonableness</p>
+        <p className="block text-sm font-medium text-gray-700">Route Reasonability</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -520,7 +520,7 @@ function HomePage() {
       </div>
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Place Representativeness:</p>
+        <p className="block text-sm font-medium text-gray-700">Representativeness</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -541,7 +541,7 @@ function HomePage() {
         </Select>
           </div>
           <div className="flex flex-col max-w-xs">
-    <p className="block text-sm font-medium text-gray-700">Overall rating:</p>
+    <p className="block text-sm font-medium text-gray-700">Overall rating</p>
             <Select
           label="Select rating"
           placeholder="Select rating"
@@ -590,7 +590,7 @@ function HomePage() {
       <div className="submit-section">
         <Button onClick={handleSubmitRatings}  >Submit all ratings and feedback</Button>
         
-        <Button onClick={handleShowFeedback} >Additional Feedback After Ratings (Optional)</Button>
+        <Button onClick={handleShowFeedback} >Additional feedback after ratings (Optional)</Button>
       </div>
     </div>
   );
