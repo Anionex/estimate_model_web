@@ -134,13 +134,13 @@ def ask_trip():
 @app.route('/ask_ourmodel', methods=['POST'])
 def ask_our():
     data = request.json
-    query = data.get('query', "")
+    messages = data.get('query', "")
     conversation_id = data.get('conversation_id')
 
     conversation = ModelEstimate.query.get(conversation_id)
 
     if conversation:
-        our_response = ask_ourmodel(query)
+        our_response = ask_ourmodel(messages)
         print(our_response)
         
         
@@ -154,6 +154,8 @@ def ask_our():
 
         conversation.our_response = our_response_content
         db.session.commit()
+        our_response_content = our_response.get("itinerary")
+        our_response_rating = our_response.get("rating info")
 
         return {'our_response': our_response_content,
                 'attractionsAvgRating': attractions_avg_rate,
