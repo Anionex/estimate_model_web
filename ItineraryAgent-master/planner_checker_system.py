@@ -79,17 +79,24 @@ def read_file(file_path):
         return file.read()
 
 def takedown_plan(plan_info):
-    ## 创建log文件夹
-    current_dir = os.path.dirname(__file__)
-    log_dir = os.path.abspath(os.path.join(current_dir, 'logs'))
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    ## 打印plan_info到json文件
-    with open(os.path.join(log_dir, "plan_info.json"), "w", encoding="utf-8") as file:
-        json.dump(plan_info, file, ensure_ascii=False)
+    """
+    将计划信息以JSON格式打印到标准输出，使用=====RETURN=====作为分隔符。
+    """
+    print("\n=====RETURN=====\n")
+    json_string = json.dumps(plan_info, ensure_ascii=False, indent=2)
+    print(json_string)
 
 if __name__ == '__main__':
-    
+    # takedown_plan({
+    #         "itinerary": "Test!",
+    #         "average_rating": {
+    #             "Attractions": 1,
+    #             "Restaurants": 1,
+    #             "Accommodations": 1,
+    #             "Overall": 1
+    #         }
+    #     })
+    # exit()
     import time
 
     env = os.environ.copy()
@@ -118,6 +125,7 @@ if __name__ == '__main__':
         json.dump(plan_info, file, ensure_ascii=False)
 
     
-    takedown_plan(plan_info)
     end_time = time.time()
     print(f"Runtime: {end_time - start_time:.2f} seconds")
+    
+    takedown_plan(plan_info)

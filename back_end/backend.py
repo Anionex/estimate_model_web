@@ -7,13 +7,26 @@ from openai import OpenAI
 import subprocess
 import json
 import re
+import dotenv
+import psutil  
+import signal
+import platform
+import traceback
+
+MODEL_MAX_PROCESS_TIME = 600
+
+dotenv.load_dotenv()
+env = os.environ.copy()
 
 # 初始化Flask
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
 # 配置数据库
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://modeltest:root@localhost/modeltest"
+if os.name == 'nt':
+    app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:ydw20040928Z#@localhost/modeltest"
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://modeltest:root@localhost/modeltest"
 db = SQLAlchemy(app)
 
 
@@ -87,7 +100,7 @@ def ask_gpt():
 @app.route('/ask_xxmodel', methods=['POST'])
 def ask_trip():
     data = request.json
-    print("data fu1",data)
+    print("ask_xxmodel received data: ",data)
     messages = next(item["content"] for item in data["query"] if item["role"] == "user")
     conversation_id = data.get('conversation_id')
 
@@ -196,47 +209,36 @@ def rate():
 
 
 def ask_gptmodel(messages):
-    api_key = "sk-Vq0Rr2GKwXozgLGB5f156a75944b43719e6bD5EeD66e7784"
-    api_base = "https://chatapi.onechats.top/v1"
-    client = OpenAI(api_key=api_key, base_url=api_base)
-    completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-    )
-    gpt_response = completion.choices[0].message.content
-    return {"source": "gpt", "response": gpt_response}
+    # client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
+    # completion = client.chat.completions.create(
+    #     model="gpt-3.5-turbo",
+    #     messages=messages,
+    # )
+    # gpt_response = completion.choices[0].message.content
+    # return {"source": "gpt", "response": gpt_response}
+    return {"source": "gpt", "response": "test"}
 
 
-def ask_tripadvisermodel(messages):
-    """
-    因为被直接当成了json，所以需要用json.loads()来解析先
-    """
+def ask_tripadvisermodel(messages) -> dict:
     try:
-        input_data = messages
-        env = os.environ.copy()
-        env['AMADEUS_API_KEY'] = 'i6eqZP984Xmcpj6Fu16MGAA31cnWOy8j'
-        env['AMADEUS_API_SECRET'] = 'Jxb1Zvr8uyhTtySy'
-        env['SERPER_API_KEY'] = '110b1bf3a1e22a4c9b5cecba17514abf4209085c'
-        env['GOOGLE_MAPS_API_KEY'] = 'AIzaSyDfbM-JakXbHcJoPei5eYuW6jIgvb95wdQ'
-
+        # print("ask_tripadvisermodel received data: ",messages)
+        # input_data = messages
+        # query = next(item["content"] for item in input_data["query"] if item["role"] == "user")
+        query = messages #todo need to fix the messages format problem
+        python_script = "../TravelPlanner-master/agents/tool_agents.py"
+        process = subprocess.Popen(
+            f'conda run -n estimate_web python {python_script} "{query}"',
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env
+        )
+        
         try:
-            conda_env_name = "estimate_web"
-            conda_activate_cmd = ""
-            python_script = "../TravelPlanner-master/agents/tool_agents.py"
-            
-            print("命令：", f'{conda_activate_cmd} python {python_script} "{input_data}"')
-            result = subprocess.run(
-                f'conda run -n estimate_web python {python_script} "{input_data}"',
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                env=env,
-                timeout=1200
-            )
-
-            if result.returncode != 0:
-                print("错误输出:", result.stderr)
+            stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME) 
+            if process.returncode != 0:
+                print("错误输出:", stderr)
                 return {
                     "itinerary": "Model failed to complete the task.",
                     "average_rating": {
@@ -246,17 +248,13 @@ def ask_tripadvisermodel(messages):
                         "Overall": None
                     }
                 }
-
-            # 从JSON文件读取数据
-            json_file_path = r"..\TravelPlanner-master\logs\plan_info.json"
-            with open(json_file_path, 'r', encoding='utf-8') as json_file:
-                json_data = json.load(json_file)
+            output = stdout
             
-            return json_data
-    
         except subprocess.TimeoutExpired:
+            kill_proc_tree(process.pid)  # 确保杀死所有子进程
+            process.kill()
             return {
-                "itinerary": "Our server timed out, and something went wrong with our model.",
+                "itinerary": "Our model timed out.",
                 "average_rating": {
                     "Attractions": None,
                     "Restaurants": None,
@@ -264,10 +262,16 @@ def ask_tripadvisermodel(messages):
                     "Overall": None
                 }
             }
+        json_str = output.split("=====RETURN=====")[-1].strip()
+        json_data = json.loads(json_str)
+        return json_data
 
     except Exception as e:
+        print("system stdout:", output)
+        error_traceback = traceback.format_exc()  # 获取完整的堆栈跟踪
+        print(f"Error in ask_tripadvisermodel:\n{error_traceback}")  # 打印详细错误信息
         return {
-            "itinerary": "Model failed to complete the task.",
+            "itinerary": f"Error occurred: {str(e)}\n",
             "average_rating": {
                 "Attractions": None,
                 "Restaurants": None,
@@ -276,38 +280,47 @@ def ask_tripadvisermodel(messages):
             }
         }
 
-
-def ask_ourmodel(messages):
+def ask_ourmodel(messages) -> dict:
     try:
-        input_data = messages
-        print("input_data: ", input_data)
-        env = os.environ.copy()
-        env['AMADEUS_API_KEY'] = 'i6eqZP984Xmcpj6Fu16MGAA31cnWOy8j'
-        env['AMADEUS_API_SECRET'] = 'Jxb1Zvr8uyhTtySy'
-        env['SERPER_API_KEY'] = '110b1bf3a1e22a4c9b5cecba17514abf4209085c'
-        env['GOOGLE_MAPS_API_KEY'] = 'AIzaSyDfbM-JakXbHcJoPei5eYuW6jIgvb95wdQ'
-        env['OPENAI_API_KEY'] = 'sk-Vq0Rr2GKwXozgLGB5f156a75944b43719e6bD5EeD66e7784'
-        env['OPENAI_API_BASE']='https://chatapi.onechats.top/v1'
+        query = next(item["content"] for item in messages if item["role"] == "user")   
+        print("input_data: ", query)
         
-        # 修改这里以使用 Conda 环境
-        conda_env_name = "estimate_web"  # 替换为您的 Conda 环境名称
-        conda_activate_cmd = ""
         python_script = "../ItineraryAgent-master/planner_checker_system.py"
         
-        result = subprocess.run(
-            f'conda run -n estimate_web python {python_script} "{input_data}"',
+        # 添加超时控制的装饰器
+        process = subprocess.Popen(
+            f'conda run -n estimate_web python {python_script} "{query}"' if platform.system() != "Windows" else
+            f'conda run -n estimate_web python {python_script} "{query}"',
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            env=env,
-            timeout=1200
+            env=env
         )
-
-        if result.returncode != 0:
-            print("Error output:", result.stderr)
+        
+        try:
+            stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME)
+            if process.returncode != 0:
+                kill_proc_tree(process.pid)
+                return {
+                    "itinerary": "Model failed to complete the task.",
+                    "average_rating": {
+                        "Attractions": None,
+                        "Restaurants": None,
+                        "Accommodations": None,
+                        "Overall": None
+                    }
+                }
+            output = stdout
+            error = stderr
+            
+        except subprocess.TimeoutExpired:
+            kill_proc_tree(process.pid)
+            # 在 Linux/Mac 上额外杀死 python 进程
+            if platform.system() != "Windows":
+                subprocess.run("pkill -f 'python.*planner_checker_system.py'", shell=True)
             return {
-                "itinerary": "Model failed to complete the task.",
+                "itinerary": "Our model timed out.",
                 "average_rating": {
                     "Attractions": None,
                     "Restaurants": None,
@@ -315,17 +328,16 @@ def ask_ourmodel(messages):
                     "Overall": None
                 }
             }
-
-        # 从JSON文件读取数据
-        json_file_path = r"..\ItineraryAgent-master\logs\plan_info.json"
-        with open(json_file_path, 'r', encoding='utf-8') as json_file:
-            json_data = json.load(json_file)
-        
+        json_str = output.split("=====RETURN=====")[-1].strip()
+        json_data = json.loads(json_str)
         return json_data
 
-    except subprocess.TimeoutExpired:
+    except Exception as e:
+        print("system stdout:", output)
+        error_traceback = traceback.format_exc()  # 获取完整的堆栈跟踪
+        print(f"Error in ask_ourmodel:\n{error_traceback}")  # 打印详细错误信息
         return {
-            "itinerary": "Our server timed out, and something went wrong with our model.",
+            "itinerary": f"Error occurred: {str(e)}\n",
             "average_rating": {
                 "Attractions": None,
                 "Restaurants": None,
@@ -333,8 +345,18 @@ def ask_ourmodel(messages):
                 "Overall": None
             }
         }
+
+
+def kill_proc_tree(pid):
+    try:
+        if platform.system() == "Windows":
+            subprocess.run(f'taskkill /F /T /PID {pid}', shell=True)
+        else:
+            # Linux/Mac 系统
+            subprocess.run(f'pkill -P {pid}', shell=True)
+            os.kill(pid, signal.SIGKILL)
     except Exception as e:
-        return str(e)
+        print(f"Kill process error: {e}")
 
 
 if __name__ == '__main__':

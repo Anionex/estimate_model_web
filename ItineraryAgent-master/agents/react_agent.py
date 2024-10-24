@@ -82,6 +82,7 @@ class ReactAgent:
         self.system_prompt = self.build_system_input(query, extra_requirements, system_prompt)
         # print(self.system_prompt)
         # 
+        # print("system_prompt: ", self.system_prompt)
         self.model.kwargs = self.kwargs
         while True:
             response = self.step(self.scratchpad)
@@ -105,6 +106,11 @@ class ReactAgent:
             if not is_tool_input:
                 response += STOP_WORD
             print("[1]" + response)
+            
+            # tmp: 打印response到文件
+            with open("react_agent_response.txt", "a") as f:
+                f.write(response + "\n")
+            
             self.scratchpad += '\n' + response
             if self.hit_final_answer:
                 return response

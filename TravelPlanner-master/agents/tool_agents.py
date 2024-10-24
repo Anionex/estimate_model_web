@@ -302,7 +302,7 @@ class ReactAgent:
                         self.scratchpad += self.current_observation 
                         self.__reset_record()
                         self.json_log[-1]['state'] = f'Successful'
-                # ��误处理，告诉模型错在哪儿
+                # 误处理，告诉模型错在哪儿
                 except DateError:
                     self.retry_record['flights'] += 1
                     self.current_observation = f"'{action_arg.split(', ')[2]}' is not in the format YYYY-MM-DD"
@@ -495,6 +495,9 @@ class ReactAgent:
                     # 获取下一个回复（一行）
                     request = format_step(self.llm([HumanMessage(content=self._build_agent_prompt())]).content)
                 # print(request)
+                
+                with open("xxreact_agent_response.txt", "a") as f:
+                    f.write(request + "\n")
                 return request
             except:
                 catch_openai_api_error()
@@ -745,16 +748,24 @@ def to_string(data) -> str:
         return str(None)
 
 def takedown_plan(plan_info):
-    ## 创建log文件夹
-    current_dir = os.path.dirname(__file__)
-    log_dir = os.path.abspath(os.path.join(current_dir, '..', 'logs'))
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    ## 打印plan_info到json文件
-    with open(os.path.join(log_dir, "plan_info.json"), "w", encoding="utf-8") as file:
-        json.dump(plan_info, file, ensure_ascii=False)
+    """
+    将计划信息以JSON格式打印到标准输出，使用=====RETURN=====作为分隔符。
+    """
+    print("\n=====RETURN=====\n")
+    json_string = json.dumps(plan_info, ensure_ascii=False, indent=2)
+    print(json_string)
 
 if __name__ == '__main__':
+    # takedown_plan({
+    #     "itinerary": "Test!\nI want to go to the moon.\nDo you know any places on the moon?",
+    #     "average_rating": {
+    #         "Attractions": 1,
+    #         "Restaurants": 1,
+    #         "Accommodations": 1,
+    #         "Overall": 1
+    #     }
+    # })
+    # exit()
     tools_list = ["notebook","flights","attractions","accommodations","restaurants","googleDistanceMatrix","planner","cities"]
     
     parser = argparse.ArgumentParser(description="Process travel planning queries.")
@@ -799,9 +810,11 @@ if __name__ == '__main__':
                 
                 # 打印response到plan_info中
                 takedown_plan(response)
+                break
         
         
     # print(cb)
+
 
 
 

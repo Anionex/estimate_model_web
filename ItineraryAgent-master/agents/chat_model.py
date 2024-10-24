@@ -7,8 +7,7 @@ from openai import APIError, RateLimitError
 
 
 
-
-from openai import OpenAI
+from langfuse.openai import OpenAI
 class OpenAIChat():
     def __init__(self, path: str = '', **kwargs) -> None:
         self.load_model(**kwargs)
