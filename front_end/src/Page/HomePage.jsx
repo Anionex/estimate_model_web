@@ -5,6 +5,8 @@ import '../App.css';
 import {Card, CardHeader, CardBody, Button,Textarea,CardFooter, Divider, Link, Image} from "@nextui-org/react";
 import {Select, SelectSection, SelectItem} from "@nextui-org/select";
 import {CircularProgress} from "@nextui-org/react";
+import ReactMarkdown from 'react-markdown';
+
 function HomePage() {
   const [gptmessages, setgptMessages] = useState([]);
   const [ourmodelmessages, setourmodelMessages] = useState([]);
@@ -268,7 +270,7 @@ function HomePage() {
           )}
           {gptmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <p>{message.content}</p>
+              <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
           ))}
           {gptloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -374,7 +376,7 @@ function HomePage() {
           )}
           {ourmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <p>{message.content}</p>
+              <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
           ))}
           {ourmodelloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -478,7 +480,7 @@ function HomePage() {
           )}
           {xxmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <p>{message.content}</p>
+              <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
           ))}
           {xxmodelloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -573,36 +575,39 @@ function HomePage() {
       </div>
 
       {feedbackVisible && (
-      <div className="advice-area">
+        <div className="advice-area mb-8">
           <Textarea
-      label="Description"
-      variant="bordered"
-      placeholder="Enter your description"
-      disableAnimation
-      disableAutosize
-      classNames={{
-        base: "max-w-xs",
-        input: "resize-y min-h-[40px]",
-      }}
-      value={ratings.feedback}
-      onChange={(e) => 
-        setRatings((prevRatings) => ({
-          ...prevRatings,
-          feedback: e.target.value  
-        }))
-      }
-/>
-      </div>
+            label="Description"
+            variant="bordered"
+            placeholder="Enter your description"
+            disableAnimation
+            disableAutosize
+            classNames={{
+              base: "max-w-xs",
+              input: "resize-y min-h-[40px]",
+            }}
+            value={ratings.feedback}
+            onChange={(e) => 
+              setRatings((prevRatings) => ({
+                ...prevRatings,
+                feedback: e.target.value  
+              }))
+            }
+          />
+        </div>
       )}
 
-      <div className="submit-section">
-        <Button onClick={handleSubmitRatings}  >Submit all ratings and feedback</Button>
+      <div className="flex justify-center" style={{ marginTop: '30px' }}>
+        <Button onClick={handleSubmitRatings} style={{ marginRight: '10px' }}>
+          Submit all ratings and feedback
+        </Button>
         
-        <Button onClick={handleShowFeedback} >Additional feedback after ratings (Optional)</Button>
+        <Button onClick={handleShowFeedback} style={{ marginLeft: '10px' }}>
+          Additional feedback after ratings (Optional)
+        </Button>
       </div>
     </div>
   );
 }
 
 export default HomePage;
-
