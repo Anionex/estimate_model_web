@@ -388,7 +388,7 @@ class ReactAgent:
                     self.retry_record['restaurants'] += 1
                     self.current_observation = f'Illegal Restaurant Search. Please try again.'
                     self.scratchpad += f'Illegal Restaurant Search. Please try again.'
-                    self.json_log = f'Illegal args. Other Error'
+                    self.json_log[-1]['state'] = f'Illegal args. Other Error'  # 修改这一行
                     
             elif action_type == "CitySearch":
                 try:
@@ -814,6 +814,7 @@ if __name__ == '__main__':
         
         
     # print(cb)
+
 
 
 

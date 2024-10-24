@@ -12,21 +12,24 @@ import psutil
 import signal
 import platform
 import traceback
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=10)
+import asyncio
 
 MODEL_MAX_PROCESS_TIME = 600
 
 dotenv.load_dotenv()
 env = os.environ.copy()
-
+DEBUG = env.get('DEBUG') == 'True'
 # 初始化Flask
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
 # 配置数据库
 if os.name == 'nt':
-    app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:ydw20040928Z#@localhost/modeltest"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest"
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://modeltest:root@localhost/modeltest"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:root@localhost/modeltest"
 db = SQLAlchemy(app)
 
 
@@ -72,7 +75,9 @@ def ask_gpt():
         conversation.question = messages[-1].get("content")
         db.session.commit()
 
-        gpt_response = ask_gptmodel(messages)['response']
+        # 使用线程池异步执行
+        future = executor.submit(ask_gptmodel, messages)
+        gpt_response = future.result()['response']
 
         conversation.gpt_response = gpt_response
 
@@ -107,7 +112,9 @@ def ask_trip():
     conversation = ModelEstimate.query.get(conversation_id)
     if conversation:
 
-        trip_response = ask_tripadvisermodel(messages)
+        # 使用线程池异步执行
+        future = executor.submit(ask_tripadvisermodel, messages)
+        trip_response = future.result()
         print("trip_response: ",trip_response)
         trip_response_content = trip_response.get("itinerary", "something went wrong")
         
@@ -140,7 +147,9 @@ def ask_our():
     conversation = ModelEstimate.query.get(conversation_id)
 
     if conversation:
-        our_response = ask_ourmodel(messages)
+        # 使用线程池异步执行
+        future = executor.submit(ask_ourmodel, messages)
+        our_response = future.result()
         print(our_response)
         
         
@@ -211,17 +220,28 @@ def rate():
 
 
 def ask_gptmodel(messages):
-    # client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
-    # completion = client.chat.completions.create(
-    #     model="gpt-3.5-turbo",
-    #     messages=messages,
-    # )
-    # gpt_response = completion.choices[0].message.content
-    # return {"source": "gpt", "response": gpt_response}
-    return {"source": "gpt", "response": "test"}
+    if DEBUG:
+        return {"source": "gpt", "response": "test"}
+    client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+    )
+    gpt_response = completion.choices[0].message.content
+    return {"source": "gpt", "response": gpt_response}
 
 
 def ask_tripadvisermodel(messages) -> dict:
+    if DEBUG:
+        return {
+        "itinerary": "Model failed to complete the task.",
+        "average_rating": {
+        "Attractions": None,
+        "Restaurants": None,
+        "Accommodations": None,
+        "Overall": None
+        }
+    }
     try:
         # print("ask_tripadvisermodel received data: ",messages)
         # input_data = messages
@@ -283,6 +303,16 @@ def ask_tripadvisermodel(messages) -> dict:
         }
 
 def ask_ourmodel(messages) -> dict:
+    if DEBUG:
+        return {
+        "itinerary": "Model failed to complete the task.",
+        "average_rating": {
+        "Attractions": None,
+        "Restaurants": None,
+        "Accommodations": None,
+        "Overall": None
+        }
+    }
     try:
         query = next(item["content"] for item in messages if item["role"] == "user")   
         print("input_data: ", query)
@@ -362,4 +392,4 @@ def kill_proc_tree(pid):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)

@@ -89,13 +89,30 @@
   padding: 15px;
 }
 
+/* .gpt-chat-box ul,
+.ourmodel-chat-box ul,
+.xxmodel-chat-box ul,
+.gpt-chat-box li,
+.ourmodel-chat-box li,
+.xxmodel-chat-box li,
+.gpt-chat-box h3,
+.ourmodel-chat-box h3,
+.xxmodel-chat-box h3,
+.gpt-chat-box h4,
+.ourmodel-chat-box h4,
+.xxmodel-chat-box h4 {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding: 0;
+} */
+
 /* 消息气泡样式 */
 .message {
   margin-bottom: 10px;
   padding: 10px 15px; /* 更好的内边距 */
   border-radius: 12px; /* 圆角化气泡 */
   width: fit-content;
-  max-width: 80%; /* 限制气泡的宽度 */
+  max-width: 95%; /* 将气泡的最大宽度增加到 90% */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加轻微阴影 */
   word-wrap: break-word; /* 处理长单词换行 */
 }
@@ -193,5 +210,6 @@
 .message {
   white-space: pre-wrap; /* 保持换行和空格 */
 }
+
 
 
