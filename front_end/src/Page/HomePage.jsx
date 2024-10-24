@@ -277,7 +277,7 @@ function HomePage() {
         </div>
         <Card>
       <CardBody>
-        <CardHeader tag="h5">Ratings Overview</CardHeader>
+        <CardHeader tag="h5">Ratings overview</CardHeader>
        
         {gptmessages.slice(-1).map((message) => (
   <div >
@@ -298,7 +298,7 @@ function HomePage() {
     
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Route Reasonability</p>
+        <p className="block text-sm font-medium text-gray-700">Reasonability</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -384,7 +384,7 @@ function HomePage() {
         </div>
         <Card>
       <CardBody>
-        <CardHeader tag="h5">Ratings Overview</CardHeader>
+        <CardHeader tag="h5">Ratings overview</CardHeader>
        
         {ourmodelmessages.slice(-1).map((message) => (
   <div >
@@ -403,7 +403,7 @@ function HomePage() {
       </CardBody>
     </Card>
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Route Reasonability</p>
+        <p className="block text-sm font-medium text-gray-700">Reasonability</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
@@ -487,7 +487,7 @@ function HomePage() {
         </div>
         <Card>
       <CardBody>
-        <CardHeader tag="h5">Ratings Overview</CardHeader>
+        <CardHeader tag="h5">Ratings overview</CardHeader>
        
         {xxmodelmessages.slice(-1).map((message) => (
   <div >
@@ -508,7 +508,7 @@ function HomePage() {
     
 
       <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Route Reasonability</p>
+        <p className="block text-sm font-medium text-gray-700">Reasonability</p>
         <Select
           label="Select rating"
           placeholder="Select rating"
