@@ -63,7 +63,15 @@ function HomePage() {
 
     try {
       const response = await axios.post(ApiUtill.url_root + 'start_session', { query: input });
-      setConversationId(response.data.conversation_id);
+      const newConversationId = response.data.conversation_id;
+      setConversationId(newConversationId);
+      
+      // Update conversation_id in ratings
+      setRatings(prevRatings => ({
+        ...prevRatings,
+        conversation_id: newConversationId
+      }));
+
     } catch (error) {
       console.error("Error starting session:", error);
       setgptLoading(false);
@@ -169,11 +177,11 @@ function HomePage() {
   };
 
   const handleSubmitRatings = async () => {
-    console.log(ratings)
-    if (ratings.conversation_id === null) {
-      alert("Conversation hasn't started.");
+    if (conversationId === null) {
+      alert("Conversation hasn't started yet.");
       return;
-  }
+    }
+    
     if (!areAllRatingsComplete()) {
       alert("Please rate all criteria!");
       return;
@@ -181,7 +189,7 @@ function HomePage() {
 
     try {
       await axios.post(ApiUtill.url_root + ApiUtill.url_rating, {
-        conversation_id: conversationId,
+        conversation_id: conversationId,  // Use conversationId instead of ratings.conversation_id
         ratings: {
           gpt: ratings.gpt,
           ourmodel: ratings.ourmodel,
@@ -212,7 +220,7 @@ function HomePage() {
       setFeedbackVisible(false);
     } catch (error) {
       console.error("Error submitting ratings:", error);
-      alert("Failed to submit the rating!");
+      alert("Failed to submit ratings!");
     } 
   };
 
