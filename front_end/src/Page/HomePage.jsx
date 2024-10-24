@@ -161,12 +161,12 @@ function HomePage() {
   
 
   const handleRatingChange = (model, ratingType, value) => {
-    const numericalValue = parseInt(value.replace(/[^\d]/g, ''), 10) || null;
+    const numericalValue = value !== '' ? parseInt(value, 10) : null;
     setRatings((prevRatings) => ({
       ...prevRatings,
-    [model]: {
-      ...prevRatings[model], 
-      [ratingType]: numericalValue
+      [model]: {
+        ...prevRatings[model], 
+        [ratingType]: numericalValue
       }
     }));
   };
@@ -174,7 +174,7 @@ function HomePage() {
   const areAllRatingsComplete = () => {
     const { gpt, ourmodel, xxmodel } = ratings;
     return [gpt, ourmodel, xxmodel].every((model) =>
-      Object.values(model).every((rating) => rating !== null)
+      Object.values(model).every((rating) => rating !== null && rating !== undefined)
     );
   };
 
