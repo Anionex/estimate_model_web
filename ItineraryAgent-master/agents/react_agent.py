@@ -107,10 +107,22 @@ class ReactAgent:
                 response += STOP_WORD
             print("[1]" + response)
             
-            # tmp: 打印response到文件
-            with open("react_agent_response.txt", "a") as f:
-                f.write(response + "\n")
-            
+            # 修改日志文件路径处理
+            try:
+                # 获取项目根目录（使用绝对路径）
+                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                log_path = os.path.join(project_root, "my_react_agent_response1.txt")
+                
+                # 确保父目录存在
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                
+                # 写入日志
+                with open(log_path, "a", encoding='utf-8') as f:
+                    f.write(response + "\n")  
+            except Exception as e:
+                print(f"Log writing error: {str(e)}")
+                
+                
             self.scratchpad += '\n' + response
             if self.hit_final_answer:
                 return response

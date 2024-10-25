@@ -10,8 +10,8 @@ search = GoogleSerperAPIWrapper()
 from agents.chat_model import OpenAIChat
 from functools import lru_cache
 search = GoogleSerperAPIWrapper()
-llm = OpenAIChat(model="gpt-4o-2024-08-06")
-# llm = OpenAIChat(model="gpt-4o-2024-08-06")
+llm = OpenAIChat(model="gpt-4o")
+# llm = OpenAIChat(model="gpt-4o")
 # llm.client = OpenAI(
 #     api_key=os.getenv("GROQ_OPENAI_API_KEY"),
 #     base_url=os.getenv("GROQ_OPENAI_API_BASE"),
@@ -25,7 +25,7 @@ import json
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
 def parse_itinerary(itinerary):
-    parser = OpenAIChat(model='gpt-4o-2024-08-06', temperature=0)
+    parser = OpenAIChat(model='gpt-4o', temperature=0)
     response, _ = parser.chat(prompt=itinerary, history=[], meta_instruction="Keep the Basic Information and itinerary sections as they are, remove other extraneous information, such as budget summaries. Do not output anything else!")
     return response
 
@@ -134,7 +134,7 @@ from agents.prompts import *
 from agents.chat_model import OpenAIChat
 from agents.plan_checker import calculate_budget, calculate_rating, count_poi
 
-check_llm = OpenAIChat(model="gpt-4o-2024-08-06", temperature=0, is_verbose=True)
+check_llm = OpenAIChat(model="gpt-4o", temperature=0, is_verbose=True)
 
 def calculate_average_rating_for_raw(itinerary, query):
     """

@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../tools/planner")))
 
 
 os.environ['OUTPUT_DIR'] = './outputs'
-os.environ['MODEL_NAME'] = 'gpt-4o-2024-08-06-mini'
+os.environ['MODEL_NAME'] = 'gpt-4o-mini'
 os.environ['OPENAI_API_KEY'] = 'sk-Opz25zl4iSRoXnwF87350eC7E5B9494bA3BfFfF4243c4331'
 os.environ['OPENAI_API_BASE'] = 'https://chatapi.onechats.top/v1'
 os.environ['GOOGLE_API_KEY'] = '1'
@@ -88,8 +88,8 @@ class ReactAgent:
                  max_steps: int = 300,
                  max_retries: int = 5,
                  illegal_early_stop_patience: int = 30,
-                 react_llm_name = 'gpt-4o-2024-08-06',
-                 planner_llm_name = 'gpt-4o-2024-08-06',
+                 react_llm_name = 'gpt-4o',
+                 planner_llm_name = 'gpt-4o',
                 #  logs_path = '../logs/',
                  city_file_path = '../database/background/citySet.txt'
                  ) -> None: 
@@ -496,9 +496,23 @@ class ReactAgent:
                     request = format_step(self.llm([HumanMessage(content=self._build_agent_prompt())]).content)
                 # print(request)
                 
-                with open("xxreact_agent_response.txt", "a") as f:
-                    f.write(request + "\n")
+                # 修改日志文件路径处理
+                try:
+                    # 获取项目根目录（使用绝对路径）
+                    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                    log_path = os.path.join(project_root, "xx_react_agent_response1.txt")
+                    
+                    # 确保父目录存在
+                    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                    
+                    # 写入日志
+                    with open(log_path, "a", encoding='utf-8') as f:
+                        f.write(request + "\n")  # 注意这里改用 request 而不是未定义的 response
+                except Exception as e:
+                    print(f"Log writing error: {str(e)}")
+                
                 return request
+                
             except:
                 catch_openai_api_error()
                 print(self._build_agent_prompt())
@@ -758,6 +772,9 @@ def takedown_plan(plan_info):
     print(json_string)
 
 if __name__ == '__main__':
+    # 先把追加文档清空
+    with open("xx_react_agent_response1.txt", "w") as f:
+        f.write("")
     # takedown_plan({
     #     "itinerary": "Test!\nI want to go to the moon.\nDo you know any places on the moon?",
     #     "average_rating": {
@@ -772,7 +789,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Process travel planning queries.")
     parser.add_argument("--set_type", type=str, default="validation", help="Set type: validation or test")
-    parser.add_argument("--model_name", type=str, default="gpt-4o-2024-08-06", help="Model name to use")
+    parser.add_argument("--model_name", type=str, default="gpt-4o", help="Model name to use")
     parser.add_argument("--output_dir", type=str, default="./", help="Output directory for results")
     parser.add_argument('input_data', type=str, help="The input query to process")
     
@@ -816,6 +833,7 @@ if __name__ == '__main__':
         
         
     # print(cb)
+
 
 
 

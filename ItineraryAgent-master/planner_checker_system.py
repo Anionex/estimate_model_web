@@ -87,6 +87,9 @@ def takedown_plan(plan_info):
     print(json_string)
 
 if __name__ == '__main__':
+    # 先把追加文档清空
+    with open("my_react_agent_response1.txt", "w") as f:
+        f.write("") 
     # takedown_plan({
     #         "itinerary": "Test!",
     #         "average_rating": {
