@@ -140,67 +140,76 @@ function HomePage() {
   }, [conversationId, newMessage]);
 
   const fetchAllModelResponses = async (newMessage, conversationId) => {
-    try {
-      // ChatGPT request
-      setgptLoading(true);
-      try {
-        const gptResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_gpt, {
+    // 设置所有模型的loading状态
+    setgptLoading(true);
+    setourmodelLoading(true);
+    setxxmodelLoading(true);
+
+    const modelRequests = [
+      // GPT请求
+      {
+        request: axios.post(ApiUtill.url_root + ApiUtill.url_gpt, {
           query: newMessage.gpt,
           conversation_id: conversationId,
-        });
-        setgptMessages((prevMessages) => [
-          ...prevMessages,
-          { role: "assistant", content: gptResponse.data.gpt_response,accommodationRating:gptResponse.data.accommodationRating,
-            restaurantAvgRating:gptResponse.data.restaurantAvgRating,
-            attractionsAvgRating:gptResponse.data.attractionsAvgRating,
-          overallRating:gptResponse.data.overall_rating }
-        ]);
-      } catch (error) {
-        console.error("Error fetching GPT response:", error);
-      } finally {
-        setgptLoading(false);
-      }
-  
-      // Our model request
-      setourmodelLoading(true);
-      try {
-        const ourmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_ourmodel, {
+        }),
+        type: 'gpt',
+        setLoading: setgptLoading,
+        setMessages: setgptMessages,
+      },
+      // Our model请求
+      {
+        request: axios.post(ApiUtill.url_root + ApiUtill.url_ourmodel, {
           query: newMessage.ourmodel,
           conversation_id: conversationId,
-        });
-        setourmodelMessages((prevMessages) => [
-          ...prevMessages,
-          { role: "assistant", content: ourmodelResponse.data.our_response,accommodationRating:ourmodelResponse.data.accommodationRating,
-            restaurantAvgRating:ourmodelResponse.data.restaurantAvgRating,
-            attractionsAvgRating:ourmodelResponse.data.attractionsAvgRating,
-            overallRating:ourmodelResponse.data.overall_rating    }
-        ]);
-      } catch (error) {
-        console.error("Error fetching our model response:", error);
-      } finally {
-        setourmodelLoading(false);
-      }
-  
-      // xx model request
-      setxxmodelLoading(true);
-      try {
-        const xxmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_xxmodel, {
+        }),
+        type: 'ourmodel',
+        setLoading: setourmodelLoading,
+        setMessages: setourmodelMessages,
+      },
+      // XX model请求
+      {
+        request: axios.post(ApiUtill.url_root + ApiUtill.url_xxmodel, {
           query: newMessage.xxmodel,
           conversation_id: conversationId,
-        });
-        setxxmodelMessages((prevMessages) => [
+        }),
+        type: 'xxmodel',
+        setLoading: setxxmodelLoading,
+        setMessages: setxxmodelMessages,
+      }
+    ];
+
+    const requests = modelRequests.map(async ({ request, type, setLoading, setMessages }) => {
+      try {
+        const response = await request;
+        const responseData = response.data;
+        
+        // 根据不同模型类型处理响应数据
+        const messageContent = {
+          gpt: responseData.gpt_response,
+          ourmodel: responseData.our_response,
+          xxmodel: responseData.xxmodel_response,
+        }[type];
+
+        setMessages((prevMessages) => [
           ...prevMessages,
-          { role: "assistant", content: xxmodelResponse.data.xxmodel_response,accommodationRating:xxmodelResponse.data.accommodationRating,
-            restaurantAvgRating:xxmodelResponse.data.restaurantAvgRating,
-            attractionsAvgRating:xxmodelResponse.data.attractionsAvgRating,
-            overallRating:xxmodelResponse.data.overall_rating    }
+          {
+            role: "assistant",
+            content: messageContent,
+            accommodationRating: responseData.accommodationRating,
+            restaurantAvgRating: responseData.restaurantAvgRating,
+            attractionsAvgRating: responseData.attractionsAvgRating,
+            overallRating: responseData.overall_rating
+          }
         ]);
       } catch (error) {
-        console.error("Error fetching xx model response:", error);
+        console.error(`Error fetching ${type} response:`, error);
       } finally {
-        setxxmodelLoading(false);
+        setLoading(false);
       }
-  
+    });
+
+    try {
+      await Promise.allSettled(requests);
     } catch (error) {
       console.error("Error in fetchAllModelResponses:", error);
     }
