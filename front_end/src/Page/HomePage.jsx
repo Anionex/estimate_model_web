@@ -7,6 +7,54 @@ import {Select, SelectSection, SelectItem} from "@nextui-org/select";
 import {CircularProgress} from "@nextui-org/react";
 import ReactMarkdown from 'react-markdown';
 
+// Define rating options array
+const ratingOptions = [...Array(11)].map((_, i) => ({
+  value: String(i),
+  label: String(i)
+}));
+
+// Create a reusable rating selector component
+const RatingSelect = ({ label, value, onChange }) => (
+  <div className="flex flex-col max-w-xs">
+    <div className="block text-sm font-medium text-gray-700">{label}</div>
+    <Select
+      label="Select rating"
+      placeholder="Select rating"
+      selectedKeys={value ? [value] : []}  
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {ratingOptions.map(option => (
+        <SelectItem key={option.value} value={option.value}>
+          {option.label}
+        </SelectItem>
+      ))}
+    </Select>
+  </div>
+);
+
+const ModelRatings = ({ model, ratings, onRatingChange }) => (
+  <>
+    <RatingSelect 
+      key={`${model}-reasonability`}
+      label="Reasonability"
+      value={ratings[model].routeReasonabilityRating}
+      onChange={(value) => onRatingChange(model, 'routeReasonabilityRating', value)}
+    />
+    <RatingSelect 
+      key={`${model}-representative`}
+      label="Representativeness"
+      value={ratings[model].representativeRating}
+      onChange={(value) => onRatingChange(model, 'representativeRating', value)}
+    />
+    <RatingSelect 
+      key={`${model}-overall`}
+      label="Overall rating"
+      value={ratings[model].overallRating}
+      onChange={(value) => onRatingChange(model, 'overallRating', value)}
+    />
+  </>
+);
+
 function HomePage() {
   const [gptmessages, setgptMessages] = useState([]);
   const [ourmodelmessages, setourmodelMessages] = useState([]);
@@ -49,7 +97,7 @@ function HomePage() {
   const handleSendMessage = async () => {
     if (input.trim() === "") return;
 
-    const systemMessage = {"role": "system", "content": "请详细规划所述路线。要求遵循以下具体规则：1) 每个旅行日必须有详细的活动安排，包括主要景点和交通方式。2) 确保提供的住宿建议方便且符合预算。3) 给出至少一个餐厅建议，并注明特色菜。4) 在结尾部分，必须准确评估并给出你的计划的Accommodation Rating, Attractions Average Rating, Restaurant Average Rating, Overall Rating的值，满分为5，并以x/5的格式表示。注意：不得更改输出的名字，确保这些评级信息单独列出在输出的最后一部分。严格执行上述指令，将结果按要求格式化。"};
+    const systemMessage = {"role": "system", "content": "Please plan the route in detail according to the following specific rules: 1) Each travel day must have detailed activity arrangements, including main attractions and transportation methods. 2) Ensure that the accommodation suggestions are convenient and within budget. 3) Provide at least one restaurant suggestion and note its specialty dishes. 4) At the end, you must accurately assess and provide values for Accommodation Rating, Attractions Average Rating, Restaurant Average Rating, Overall Rating, with a maximum score of 5, expressed in x/5 format. Note: Do not change the output names, ensure these rating information are listed separately in the last part of the output. Strictly follow the above instructions and format the results as required."};
     const userMessage = {"role": "user", "content": input};
     
     setNewMessage({
@@ -80,7 +128,6 @@ function HomePage() {
       setourmodelLoading(false);
       setxxmodelLoading(false); 
     } finally {
-      //setInput("");
       document.querySelector('input[type="text"]').focus();
     }
   };
@@ -94,7 +141,7 @@ function HomePage() {
 
   const fetchAllModelResponses = async (newMessage, conversationId) => {
     try {
-      // ChatGPT 请求
+      // ChatGPT request
       setgptLoading(true);
       try {
         const gptResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_gpt, {
@@ -114,7 +161,7 @@ function HomePage() {
         setgptLoading(false);
       }
   
-      // 我们的模型请求
+      // Our model request
       setourmodelLoading(true);
       try {
         const ourmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_ourmodel, {
@@ -134,7 +181,7 @@ function HomePage() {
         setourmodelLoading(false);
       }
   
-      // xx模型请求
+      // xx model request
       setxxmodelLoading(true);
       try {
         const xxmodelResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_xxmodel, {
@@ -161,12 +208,11 @@ function HomePage() {
   
 
   const handleRatingChange = (model, ratingType, value) => {
-    const numericalValue = value !== '' ? parseInt(value, 10) : null;
     setRatings((prevRatings) => ({
       ...prevRatings,
       [model]: {
-        ...prevRatings[model], 
-        [ratingType]: numericalValue
+        ...prevRatings[model],
+        [ratingType]: value
       }
     }));
   };
@@ -180,68 +226,122 @@ function HomePage() {
 
   const handleSubmitRatings = async () => {
     if (conversationId === null) {
-      alert("Conversation hasn't started yet.");
+      alert("Conversation has not started yet");
       return;
     }
-    
-    if (!areAllRatingsComplete()) {
-      alert("Please rate all criteria!");
+
+    console.log('Current ratings:', ratings);
+
+    const isValidRating = (rating) => {
+      console.log('Checking rating:', rating, typeof rating);
+      if (rating === null || rating === undefined) {
+        return false;
+      }
+      const numRating = Number(rating);
+      return !isNaN(numRating) && numRating >= 0 && numRating <= 10;
+    };
+
+    const allModels = ['gpt', 'ourmodel', 'xxmodel'];
+    const allRatingTypes = ['overallRating', 'routeReasonabilityRating', 'representativeRating'];
+
+    const hasEmptyRatings = allModels.some(model => 
+      allRatingTypes.some(type => {
+        const rating = ratings[model][type];
+        console.log(`${model}.${type}:`, rating);
+        return rating === null || rating === undefined;
+      })
+    );
+
+    if (hasEmptyRatings) {
+      alert("Please ensure all ratings are filled out!");
+      return;
+    }
+
+    const hasInvalidRatings = allModels.some(model => 
+      allRatingTypes.some(type => 
+        !isValidRating(ratings[model][type])
+      )
+    );
+
+    if (hasInvalidRatings) {
+      alert("Please ensure all ratings are between 0 and 10!");
       return;
     }
 
     try {
-      await axios.post(ApiUtill.url_root + ApiUtill.url_rating, {
-        conversation_id: conversationId,  // Use conversationId instead of ratings.conversation_id
-        ratings: {
-          gpt: ratings.gpt,
-          ourmodel: ratings.ourmodel,
-          xxmodel: ratings.xxmodel,
-        },
-        feedback: feedback
-      });
-      alert("The ratings and feedback have been successfully submitted!");
-      setRatings({
-        conversation_id: null,
+      const ratingData = {
+        conversation_id: conversationId,
         gpt: {
-          overallRating: null,
-          routeReasonabilityRating: null,
-          representativeRating: null,
+          overall_rating: ratings.gpt.overallRating,
+          route_reasonability_rating: ratings.gpt.routeReasonabilityRating,
+          representative_rating: ratings.gpt.representativeRating
         },
         ourmodel: {
-          overallRating: null,
-          routeReasonabilityRating: null,
-          representativeRating: null,
+          overall_rating: ratings.ourmodel.overallRating,
+          route_reasonability_rating: ratings.ourmodel.routeReasonabilityRating,
+          representative_rating: ratings.ourmodel.representativeRating
         },
         xxmodel: {
-          overallRating: null,
-          routeReasonabilityRating: null,
-          representativeRating: null,
-        }
-      });
-      setFeedback("");
-      setFeedbackVisible(false);
+          overall_rating: ratings.xxmodel.overallRating,
+          route_reasonability_rating: ratings.xxmodel.routeReasonabilityRating,
+          representative_rating: ratings.xxmodel.representativeRating
+        },
+        feedback: ratings.feedback || ""
+      };
+
+      console.log('Submitting ratings:', ratingData);
+
+      const response = await axios.post(ApiUtill.url_root + ApiUtill.url_rating, ratingData);
+      
+      if (response.status === 200) {
+        alert("Ratings and feedback submitted successfully!");
+        
+        const initialRatings = {
+          gpt: {
+            overallRating: null,
+            routeReasonabilityRating: null,
+            representativeRating: null,
+          },
+          ourmodel: {
+            overallRating: null,
+            routeReasonabilityRating: null,
+            representativeRating: null,
+          },
+          xxmodel: {
+            overallRating: null,
+            routeReasonabilityRating: null,
+            representativeRating: null,
+          },
+          conversation_id: null,
+          feedback: ""
+        };
+        
+        setRatings(initialRatings);
+        setFeedbackVisible(false);
+        setInput("");
+      }
     } catch (error) {
       console.error("Error submitting ratings:", error);
       alert("Failed to submit ratings!");
-    } 
+    }
   };
 
   const handleShowFeedback = () => {
     if (areAllRatingsComplete()) {
       setFeedbackVisible(true);
     }else{
-      alert("Please finish all ratings frist!")
+      alert("Please finish all ratings first!")
     }
   };
-
   return (
     <div className="App">
+
       <h1>Plan a trip within the United States</h1>
 
       <div className="input-box">
         <Textarea
       label="Enter your question"
-      placeholder="e.g.Please help me plan a trip from St. Petersburg to Rockford spanning 3 days from March 16th to March 18th, 2022. The travel should be planned for a single person with a budget of $1,700."
+      placeholder="e.g.Please help me plan a trip from St. Petersburg to Rockford spanning 3 days October 27th to October 29th, 2024. The travel should be planned for a single person with a budget of $1,700."
       className="max-w-xs"
       size="lg"
       value={input}
@@ -297,73 +397,14 @@ function HomePage() {
       </Card>
     
 
-      <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Reasonability</p>
-        <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.gpt.routeReasonabilityRating || 0}
-          onChange={(e) => handleRatingChange('gpt', 'routeReasonabilityRating', e.target.value)}
-        >
-           <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-      </div>
-
-      <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Representativeness</p>
-        <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.gpt.representativeRating || 0}
-          onChange={(e) => handleRatingChange('gpt', 'representativeRating', e.target.value)}
-        >
-          <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-          </div>
-          <div className="flex flex-col max-w-xs">
-    <p className="block text-sm font-medium text-gray-700">Overall rating</p>
-            <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.gpt.overallRating || 0}
-          onChange={(e) => handleRatingChange('gpt', 'overallRating', e.target.value)}
-        >
-           <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
+      <ModelRatings 
+        model="gpt"
+        ratings={ratings}
+        onRatingChange={handleRatingChange}
+      />
     </div>
-        </div>
 
-        <div className="chat-box">
+    <div className="chat-box">
           <h1>Plan 2</h1>
             <Card className="py-4">
       <CardHeader className="pb-0 pt-2 px-4 flex-col items-start">
@@ -402,70 +443,11 @@ function HomePage() {
     </Card>
       </CardBody>
     </Card>
-      <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Reasonability</p>
-        <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.ourmodel.routeReasonabilityRating || ''}
-          onChange={(e) => handleRatingChange('ourmodel', 'routeReasonabilityRating', e.target.value)}
-        >
-           <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-      </div>
-
-      <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Representativeness</p>
-        <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.ourmodel.representativeRating || ''}
-          onChange={(e) => handleRatingChange('ourmodel', 'representativeRating', e.target.value)}
-        >
-          <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-        </div>
-        <div className="flex flex-col max-w-xs">
-    <p className="block text-sm font-medium text-gray-700">Overall rating</p>
-            <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.ourmodel.overallRating || ''}
-          onChange={(e) => handleRatingChange('ourmodel', 'overallRating', e.target.value)}
-        >
-           <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-    </div>
+      <ModelRatings 
+        model="ourmodel"
+        ratings={ratings}
+        onRatingChange={handleRatingChange}
+      />
       </div>
         <div className="chat-box">
           <h1>Plan 3</h1>
@@ -476,7 +458,7 @@ function HomePage() {
       <CardBody className="overflow-visible py-2">
         <div className="xxmodel-chat-box">
           {xxmodelmessages.length === 0 && !xxmodelloading && (
-            <p>No chat  available</p>
+            <p>No chat available</p>
           )}
           {xxmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
@@ -507,71 +489,12 @@ function HomePage() {
     </Card>
     
 
-      <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Reasonability</p>
-        <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.ourmodel.routeReasonabilityRating || ''}
-          onChange={(e) => handleRatingChange('xxmodel', 'routeReasonabilityRating', e.target.value)}
-        >
-          <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-      </div>
-
-      <div className="flex flex-col max-w-xs">
-        <p className="block text-sm font-medium text-gray-700">Representativeness</p>
-        <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.xxmodel.representativeRating || ''}
-          onChange={(e) => handleRatingChange('xxmodel', 'representativeRating', e.target.value)}
-        >
-           <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-          </div>
-          <div className="flex flex-col max-w-xs">
-    <p className="block text-sm font-medium text-gray-700">Overall rating</p>
-            <Select
-          label="Select rating"
-          placeholder="Select rating"
-          value={ratings.xxmodel.overallRating || ''}
-              onChange={(e) => handleRatingChange('xxmodel', 'overallRating', e.target.value)}
-        >
-          <SelectItem value={0}>0</SelectItem>
-          <SelectItem value={1}>1</SelectItem>
-          <SelectItem value={2}>2</SelectItem>
-          <SelectItem value={3}>3</SelectItem>
-          <SelectItem value={4}>4</SelectItem>
-          <SelectItem value={5}>5</SelectItem>
-          <SelectItem value={6}>6</SelectItem>
-          <SelectItem value={7}>7</SelectItem>
-          <SelectItem value={8}>8</SelectItem>
-          <SelectItem value={9}>9</SelectItem>
-          <SelectItem value={10}>10</SelectItem>
-        </Select>
-    </div>  
-        </div>
+      <ModelRatings 
+        model="xxmodel"
+        ratings={ratings}
+        onRatingChange={handleRatingChange}
+      />
+    </div>
       </div>
 
       {feedbackVisible && (
