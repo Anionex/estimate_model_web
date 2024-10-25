@@ -15,9 +15,38 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=10)
 import asyncio
+from flask_migrate import Migrate
+
+
 
 MODEL_MAX_PROCESS_TIME = 600
+MODEL_FAIL_TO_COMPLETE_RESPONSE = {
+    "itinerary": "Model failed to complete the task.",
+    "average_rating": {
+        "Attractions": None,
+        "Restaurants": None,
+        "Accommodations": None,
+        "Overall": None
+    },
+    "expense_info": {
+        "Unit": None,
+        "Transportation": None,
+        "Attractions": None,
+        "Accommodation": None,
+        "Dining": None,
+        "Total": None
+    }
+}
 
+MODEL_TIME_OUT_RESPONSE = {
+    "itinerary": "Our model timed out.",
+    "average_rating": {
+        "Attractions": None,
+        "Restaurants": None,
+        "Accommodations": None,
+        "Overall": None
+    }
+}
 dotenv.load_dotenv()
 env = os.environ.copy()
 DEBUG = env.get('DEBUG') == 'True'
@@ -31,7 +60,7 @@ if os.name == 'nt':
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:root@localhost/modeltest"
 db = SQLAlchemy(app)
-
+migrate = Migrate(app, db)
 
 # 定义数据库模型
 from sqlalchemy.sql import func
@@ -39,20 +68,43 @@ from sqlalchemy.sql import func
 class ModelEstimate(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     question = db.Column(db.String(2000))
-    gpt_response = db.Column(db.String(4000))
+    
+    # GPT相关字段
+    gpt_response = db.Column(db.Text)
     gpt_overall_rating = db.Column(db.Integer)
     gpt_route_rationality_rating = db.Column(db.Integer)
     gpt_representativeness_rating = db.Column(db.Integer)
-    trip_response = db.Column(db.String(4000))
+    
+    # trip相关字段
+    trip_response = db.Column(db.Text)
     trip_overall_rating = db.Column(db.Integer)
     trip_route_rationality_rating = db.Column(db.Integer)
     trip_representativeness_rating = db.Column(db.Integer)
-    our_response = db.Column(db.String(4000))
+    
+    # xx model的费用字段
+    trip_currency_unit = db.Column(db.String(10))
+    trip_transportation_cost = db.Column(db.Float)
+    trip_attractions_cost = db.Column(db.Float)
+    trip_accommodation_cost = db.Column(db.Float)
+    trip_dining_cost = db.Column(db.Float)
+    trip_total_cost = db.Column(db.Float)
+    
+    # our model相关字段
+    our_response = db.Column(db.Text)
     our_overall_rating = db.Column(db.Integer)
     our_route_rationality_rating = db.Column(db.Integer)
     our_representativeness_rating = db.Column(db.Integer)
+    
+    # our model的费用字段
+    our_currency_unit = db.Column(db.String(10))
+    our_transportation_cost = db.Column(db.Float)
+    our_attractions_cost = db.Column(db.Float)
+    our_accommodation_cost = db.Column(db.Float)
+    our_dining_cost = db.Column(db.Float)
+    our_total_cost = db.Column(db.Float)
+    
     feedback = db.Column(db.String(2000))
-    create_time = db.Column(db.DateTime)  
+    create_time = db.Column(db.DateTime)
 
 
 @app.route('/start_session', methods=['POST'])
@@ -133,12 +185,25 @@ def ask_trip():
         conversation.trip_response = trip_response_content  # 使用正确的字段名
         db.session.commit()
 
-        return {'xxmodel_response': trip_response_content,
-                'attractionsAvgRating': attractions_avg_rate,
-                'restaurantAvgRating': restaurant_avg_rate,
-                'accommodationRating': accommodation_rate,
-                'overall_rating': overall_avg_rate,
-                }
+        # 添加费用信息的保存
+        expense_info = trip_response.get("expense_info", {})
+        conversation.trip_currency_unit = expense_info.get("Unit")
+        conversation.trip_transportation_cost = expense_info.get("Transportation")
+        conversation.trip_attractions_cost = expense_info.get("Attractions")
+        conversation.trip_accommodation_cost = expense_info.get("Accommodation")
+        conversation.trip_dining_cost = expense_info.get("Dining")
+        conversation.trip_total_cost = expense_info.get("Total")
+        
+        db.session.commit()
+        
+        return {
+            'xxmodel_response': trip_response_content,
+            'attractionsAvgRating': attractions_avg_rate,
+            'restaurantAvgRating': restaurant_avg_rate,
+            'accommodationRating': accommodation_rate,
+            'overall_rating': overall_avg_rate,
+            'expense_info': expense_info  # 添加费用信息到返回数据
+        }
     else:
         return jsonify({'error': 'Invalid  ID!'})
 
@@ -171,12 +236,25 @@ def ask_our():
         our_response_content = our_response.get("itinerary")
         our_response_rating = our_response.get("rating info")
 
-        return {'our_response': our_response_content,
-                'attractionsAvgRating': attractions_avg_rate,
-                'restaurantAvgRating': restaurant_avg_rate,
-                'accommodationRating': accommodation_rate,
-                'overall_rating': overall_avg_rate,
-                }
+        # 添加费用信息的保存
+        expense_info = our_response.get("expense_info", {})
+        conversation.our_currency_unit = expense_info.get("Unit")
+        conversation.our_transportation_cost = expense_info.get("Transportation")
+        conversation.our_attractions_cost = expense_info.get("Attractions")
+        conversation.our_accommodation_cost = expense_info.get("Accommodation")
+        conversation.our_dining_cost = expense_info.get("Dining")
+        conversation.our_total_cost = expense_info.get("Total")
+        
+        db.session.commit()
+        
+        return {
+            'our_response': our_response_content,
+            'attractionsAvgRating': attractions_avg_rate,
+            'restaurantAvgRating': restaurant_avg_rate,
+            'accommodationRating': accommodation_rate,
+            'overall_rating': overall_avg_rate,
+            'expense_info': expense_info  # 添加费用信息到返回数据
+        }
         
     else:
         return jsonify({'error': 'Invalid session ID!'}), 404
@@ -246,15 +324,7 @@ def ask_gptmodel(messages):
 
 def ask_tripadvisermodel(messages) -> dict:
     if DEBUG:
-        return {
-        "itinerary": "Model failed to complete the task.",
-        "average_rating": {
-        "Attractions": None,
-        "Restaurants": None,
-        "Accommodations": None,
-        "Overall": None
-        }
-    }
+        return MODEL_FAIL_TO_COMPLETE_RESPONSE
     try:
         # print("ask_tripadvisermodel received data: ",messages)
         # input_data = messages
@@ -288,15 +358,7 @@ def ask_tripadvisermodel(messages) -> dict:
         except subprocess.TimeoutExpired:
             kill_proc_tree(process.pid)  # 确保杀死所有子进程
             process.kill()
-            return {
-                "itinerary": "Our model timed out.",
-                "average_rating": {
-                    "Attractions": None,
-                    "Restaurants": None,
-                    "Accommodations": None,
-                    "Overall": None
-                }
-            }
+            return MODEL_TIME_OUT_RESPONSE
         json_str = output.split("=====RETURN=====")[-1].strip()
         json_data = json.loads(json_str)
         return json_data
@@ -317,15 +379,7 @@ def ask_tripadvisermodel(messages) -> dict:
 
 def ask_ourmodel(messages) -> dict:
     if DEBUG:
-        return {
-        "itinerary": "Model failed to complete the task.",
-        "average_rating": {
-        "Attractions": None,
-        "Restaurants": None,
-        "Accommodations": None,
-        "Overall": None
-        }
-    }
+        return MODEL_FAIL_TO_COMPLETE_RESPONSE
     try:
         query = next(item["content"] for item in messages if item["role"] == "user")   
         print("input_data: ", query)
@@ -364,15 +418,7 @@ def ask_ourmodel(messages) -> dict:
             # 在 Linux/Mac 上额外杀死 python 进程
             if platform.system() != "Windows":
                 subprocess.run("pkill -f 'python.*planner_checker_system.py'", shell=True)
-            return {
-                "itinerary": "Our model timed out.",
-                "average_rating": {
-                    "Attractions": None,
-                    "Restaurants": None,
-                    "Accommodations": None,
-                    "Overall": None
-                }
-            }
+            return MODEL_TIME_OUT_RESPONSE
         json_str = output.split("=====RETURN=====")[-1].strip()
         json_data = json.loads(json_str)
         return json_data
@@ -406,4 +452,6 @@ def kill_proc_tree(pid):
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
+
+
 
