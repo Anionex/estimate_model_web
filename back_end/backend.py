@@ -199,17 +199,17 @@ def rate():
     xx_model_ratings = data.get('xxmodel', {})
     feedback = data.get("feedback", "")
 
-    gpt_overall_rating = safe_int(gpt_ratings.get('overallRating'))
-    gpt_route_reasonability_rating = safe_int(gpt_ratings.get('routeReasonabilityRating'))
-    gpt_representative_rating = safe_int(gpt_ratings.get('representativeRating'))
+    gpt_overall_rating = safe_int(gpt_ratings.get('overall_rating'))
+    gpt_route_reasonability_rating = safe_int(gpt_ratings.get('route_reasonability_rating'))
+    gpt_representative_rating = safe_int(gpt_ratings.get('representative_rating'))
 
-    our_overall_rating = safe_int(our_model_ratings.get('overallRating'))
-    our_route_reasonability_rating = safe_int(our_model_ratings.get('routeReasonabilityRating'))
-    our_representative_rating = safe_int(our_model_ratings.get('representativeRating'))
+    our_overall_rating = safe_int(our_model_ratings.get('overall_rating'))
+    our_route_reasonability_rating = safe_int(our_model_ratings.get('route_reasonability_rating'))
+    our_representative_rating = safe_int(our_model_ratings.get('representative_rating'))
 
-    xx_overall_rating = safe_int(xx_model_ratings.get('overallRating'))
-    xx_route_reasonability_rating = safe_int(xx_model_ratings.get('routeReasonabilityRating'))
-    xx_representative_rating = safe_int(xx_model_ratings.get('representativeRating'))
+    xx_overall_rating = safe_int(xx_model_ratings.get('overall_rating'))
+    xx_route_reasonability_rating = safe_int(xx_model_ratings.get('route_reasonability_rating'))
+    xx_representative_rating = safe_int(xx_model_ratings.get('representative_rating'))
 
     conversation = ModelEstimate.query.get(conversation_id)
     if conversation:
