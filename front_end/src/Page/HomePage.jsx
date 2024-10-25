@@ -296,6 +296,7 @@ function HomePage() {
       if (response.status === 200) {
         alert("Ratings and feedback submitted successfully!");
         
+        // 重置评分和反馈,但保留对话内容
         const initialRatings = {
           gpt: {
             overallRating: null,
@@ -318,7 +319,12 @@ function HomePage() {
         
         setRatings(initialRatings);
         setFeedbackVisible(false);
-        //setInput("");
+        setConversationId(null);
+        // 注意:不清空以下内容
+        // setInput("")
+        // setgptMessages([])
+        // setourmodelMessages([])
+        // setxxmodelMessages([])
       }
     } catch (error) {
       console.error("Error submitting ratings:", error);
