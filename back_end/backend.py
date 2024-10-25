@@ -14,7 +14,6 @@ import platform
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=10)
-import asyncio
 from flask_migrate import Migrate
 
 
@@ -324,6 +323,7 @@ def ask_gptmodel(messages):
 
 def ask_tripadvisermodel(messages) -> dict:
     if DEBUG:
+        time.sleep(6)
         return MODEL_FAIL_TO_COMPLETE_RESPONSE
     try:
         # print("ask_tripadvisermodel received data: ",messages)
@@ -379,6 +379,7 @@ def ask_tripadvisermodel(messages) -> dict:
 
 def ask_ourmodel(messages) -> dict:
     if DEBUG:
+        time.sleep(3)
         return MODEL_FAIL_TO_COMPLETE_RESPONSE
     try:
         query = next(item["content"] for item in messages if item["role"] == "user")   
@@ -451,7 +452,7 @@ def kill_proc_tree(pid):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    app.run(debug=DEBUG, threaded=True)
 
 
 
