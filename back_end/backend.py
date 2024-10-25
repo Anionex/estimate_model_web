@@ -103,7 +103,7 @@ class ModelEstimate(db.Model):
     our_total_cost = db.Column(db.Float)
     
     feedback = db.Column(db.String(2000))
-    create_time = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    create_time = db.Column(db.DateTime, nullable=True, server_default=func.now())
 
 
 @app.route('/start_session', methods=['POST'])
