@@ -61,7 +61,7 @@ Parameters:
 Query: The query from user.
 Example: Planner[Give me a 3-day trip plan from Seattle to New York] would return a detailed 3-day trip plan.
 
-
+If no date specified, start planning from the day after {current_date}.
 You should use as many as possible steps to collect engough information to input to the Planner tool. 
 Each action only calls one function once. Do not add any description in the action.
 
@@ -70,7 +70,7 @@ Query: {query}{scratchpad}"""
 
 
 zeroshot_react_agent_prompt = PromptTemplate(
-                        input_variables=["query", "scratchpad"],
+                        input_variables=["query", "scratchpad", "current_date"],
                         template=ZEROSHOT_REACT_INSTRUCTION,
                         )
 

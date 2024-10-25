@@ -513,7 +513,9 @@ class ReactAgent:
         if self.mode == "zero_shot":
             return self.agent_prompt.format(
                 query=self.query,
-                scratchpad=self.scratchpad)
+                scratchpad=self.scratchpad,
+                current_date=datetime.now().strftime("%Y-%m-%d"),
+                )
 
     def is_finished(self) -> bool:
         return self.finished
@@ -814,7 +816,6 @@ if __name__ == '__main__':
         
         
     # print(cb)
-
 
 
 
