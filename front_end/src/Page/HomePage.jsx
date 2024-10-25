@@ -318,7 +318,7 @@ function HomePage() {
         
         setRatings(initialRatings);
         setFeedbackVisible(false);
-        setInput("");
+        //setInput("");
       }
     } catch (error) {
       console.error("Error submitting ratings:", error);

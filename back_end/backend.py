@@ -34,6 +34,8 @@ db = SQLAlchemy(app)
 
 
 # 定义数据库模型
+from sqlalchemy.sql import func
+
 class ModelEstimate(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     question = db.Column(db.String(2000))
@@ -50,13 +52,16 @@ class ModelEstimate(db.Model):
     our_route_rationality_rating = db.Column(db.Integer)
     our_representativeness_rating = db.Column(db.Integer)
     feedback = db.Column(db.String(2000))
-    create_time = db.Column(db.DateTime)
+    create_time = db.Column(db.DateTime)  
 
 
 @app.route('/start_session', methods=['POST'])
 def start_session():
     # 创建一条新的记录
-    new_conversation = ModelEstimate(question=request.json['query'])
+    new_conversation = ModelEstimate(
+        question=request.json['query'],
+        create_time=func.now()  
+    )
     db.session.add(new_conversation)
     db.session.commit()
 
@@ -125,7 +130,7 @@ def ask_trip():
         accommodation_rate=trip_response_rating.get("Accommodations")
         overall_avg_rate=trip_response_rating.get("Overall")
 
-        conversation.xxmodel_response = trip_response_content
+        conversation.trip_response = trip_response_content  # 使用正确的字段名
         db.session.commit()
 
         return {'xxmodel_response': trip_response_content,
@@ -177,26 +182,34 @@ def ask_our():
         return jsonify({'error': 'Invalid session ID!'}), 404
 
 
+def safe_int(value):
+    try:
+        return int(value) if value is not None else None
+    except ValueError:
+        return None
+
 @app.route('/rate', methods=['POST'])
 def rate():
     data = request.json
+    if DEBUG:
+        print("rate received data: ",data)
     conversation_id = data.get('conversation_id')
     gpt_ratings = data.get('gpt', {})
     our_model_ratings = data.get('ourmodel', {})
     xx_model_ratings = data.get('xxmodel', {})
     feedback = data.get("feedback", "")
 
-    gpt_overall_rating = gpt_ratings.get('overallRating')
-    gpt_route_reasonability_rating = gpt_ratings.get('routeReasonabilityRating')
-    gpt_representative_rating = gpt_ratings.get('representativeRating')
+    gpt_overall_rating = safe_int(gpt_ratings.get('overallRating'))
+    gpt_route_reasonability_rating = safe_int(gpt_ratings.get('routeReasonabilityRating'))
+    gpt_representative_rating = safe_int(gpt_ratings.get('representativeRating'))
 
-    our_overall_rating = our_model_ratings.get('overallRating')
-    our_route_reasonability_rating = our_model_ratings.get('routeReasonabilityRating')
-    our_representative_rating = our_model_ratings.get('representativeRating')
+    our_overall_rating = safe_int(our_model_ratings.get('overallRating'))
+    our_route_reasonability_rating = safe_int(our_model_ratings.get('routeReasonabilityRating'))
+    our_representative_rating = safe_int(our_model_ratings.get('representativeRating'))
 
-    xx_overall_rating = xx_model_ratings.get('overallRating')
-    xx_route_reasonability_rating = xx_model_ratings.get('routeReasonabilityRating')
-    xx_representative_rating = xx_model_ratings.get('representativeRating')
+    xx_overall_rating = safe_int(xx_model_ratings.get('overallRating'))
+    xx_route_reasonability_rating = safe_int(xx_model_ratings.get('routeReasonabilityRating'))
+    xx_representative_rating = safe_int(xx_model_ratings.get('representativeRating'))
 
     conversation = ModelEstimate.query.get(conversation_id)
     if conversation:
@@ -393,3 +406,4 @@ def kill_proc_tree(pid):
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
+
