@@ -67,7 +67,7 @@ Tool Output:Input parsing error: <string>:1 Unexpected "}}" at column 65 Please 
   - Don't provide specific time ranges for activities unless necessary
 6. Add ratings for restaurants, attractions, and hotels if available.
 7. You must add cost for transportation, attractions, accommodation, and dining.
-8. If no date specified, start planning from the day after 2024-10-18.
+8. If no date specified, start planning from the day after {current_date}.
 9. DO NOT SUMMARIZE THE TOTAL COST AT THE END OF THE ITINERARY. 
 
 ## Itinerary Format Example
