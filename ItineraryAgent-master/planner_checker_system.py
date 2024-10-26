@@ -51,14 +51,45 @@ def planner_checker_loop(query, extra_requirements=''):
         
         if iter_cnt >= MAX_CHECK_ITER:
             print("=====\nReach max check iter.\n=====")
-            return {"itinerary":plan, 
+            # 在达到最大迭代次数后，尝试补全缺失的信息
+            if not checker.expense_info or not checker.average_rating:
+                try:
+                    checker._budget_check(plan, query, extra_requirements)
+                    
+                except Exception as e:
+                    print(f"Failed to calculate expense_info: {e}")
+
+                try:
+                    checker._rating_summary(plan)
+                    checker._count_poi(plan)
+                    # 计算平均评分
+                    checker.average_rating = {}
+                    categories = [
+                        ('Attractions', 'Total Attraction Ratings', 'Total Attractions'),
+                        ('Accommodations', 'Total Accommodation Ratings', 'Total Accommodations'),
+                        ('Restaurants', 'Total Restaurant Ratings', 'Total Restaurants'),
+                        ('Overall', 'Total', 'Total')
+                    ]
+                    
+                    for category, rating_key, count_key in categories:
+                        total_rating = checker.rating_info[rating_key]
+                        total_count = checker.poi_count[count_key]
+                        
+                        checker.average_rating[category] = round(total_rating / total_count, 2) if total_count > 0 else 0.0
+                    
+                    print(f"Average rating: {checker.average_rating}")
+                except Exception as e:
+                    print(f"Failed to calculate average_rating: {e}")
+                    
+            return {"itinerary": plan, 
                     "expense_info": checker.expense_info, 
                     "average_rating": checker.average_rating
                     }
+        
         # 如果没有建议，结束循环
         if "No more suggestion" in check_result or "Something went wrong!!!" in check_result:
             print("=====\nNo more suggestion.\n=====")
-            return {"itinerary":plan, 
+            return {"itinerary": plan, 
                     "expense_info": checker.expense_info, 
                     "average_rating": checker.average_rating
                     }
