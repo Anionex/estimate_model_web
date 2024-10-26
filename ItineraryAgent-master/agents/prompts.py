@@ -192,6 +192,7 @@ You are a professional itinerary reviewer, responsible for reviewing itineraries
 
 ## User Requirements
 "{query}"
+current date: {current_date}
 
 """
 

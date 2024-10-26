@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 import os
 import re
@@ -120,7 +121,7 @@ class PlanChecker:
         if check_stage == 'budget':
             sys_prompt = PLAN_CHECKER_PROMPT_BUDGET.format(extra_requirements=extra_requirements, query=query)
         elif check_stage == 'reasonability':
-            sys_prompt = PLAN_CHECKER_PROMPT.format(extra_requirements=extra_requirements, query=query)
+            sys_prompt = PLAN_CHECKER_PROMPT.format(extra_requirements=extra_requirements, query=query, current_date=datetime.now().strftime("%Y-%m-%d"))
         return sys_prompt
 
         
