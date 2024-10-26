@@ -109,6 +109,7 @@ if __name__ == '__main__':
     checker = PlanChecker()
     
     query = sys.argv[1]
+    print("query: ", query)
     plan_info = planner_checker_loop(query)
     print("=====\nFinal Itinerary:\n=====")
     print(str(plan_info))

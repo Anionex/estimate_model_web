@@ -1,17 +1,10 @@
 TOOL_DESC = """### {name_for_model}:\nTool description: {description_for_model}\nParameters: {parameters}"""
 REACT_PROMPT = ""
 REACT_PLANNER_PROMPT_TWO_STAGE_IN_ONE = """# Travel Planning Assistant
-
-You are a rule-abiding autonomous agent for travel itinerary planning. Your goal is to reason and act to create a comprehensive, personalized, and efficient travel itinerary based on user requirements and constraints.You think and gather information through Analysis and Tool Invocation to complete the task.
-
-
-## User Requirements
-
-{query}
+You are a helpful autonomous agent for travel itinerary planning. Your goal is to reason and act to create a comprehensive, personalized, and efficient travel itinerary based on user requirements and constraints.You think and gather information through Analysis and Tool Invocation to complete the task.You strictly follow the rules and workflow.
 
 
 ## Available Tools
-
 You can use the following tools, with Tool Input in JSON format:
 {tool_descs}
 
@@ -26,14 +19,10 @@ Tag Types include:
 
 After a tool invocation, you will receive a tool output. The tool output may contain either the return result of the tool call or an explanation of a failed call.
 If you receive a correct return result, please analyze the return result in the next Analysis tag.
-If you receive an explanation of a failed call, please correct your output according to the instructions.
-an example of a failed call:
-<Tool Input:{{"origin":"中山","destination":"桂林","departure_date":"2023-10-16"}}>
-Tool Output:Input parsing error: <string>:1 Unexpected "}}" at column 65 Please check if the input parameters are correct 
+If you receive an explanation of a failed call, please correct your output according to the error message.
 
 
 ## Workflow
-
 1. Determine some basic information: budget, duration, cities, time allocation, attraction preferences, dining preferences, etc. If not provided, set reasonably based on context.
 2. Get major attractions in cities.
 3. Get must-visit restaurants in these cities.
@@ -45,7 +34,6 @@ Tool Output:Input parsing error: <string>:1 Unexpected "}}" at column 65 Please 
 
 
 ## Rules
-
 0. Return the next special tag for given reasoning trace, 
   here is a example reasoning trace:
 // <Analysis:To create a comprehensive travel plan, we need to first determine the basic information for this trip, including budget, number of days, cities, attraction preferences, dining preferences, etc. If the user does not provide certain information, I will set it appropriately based on the actual situation.>
@@ -68,10 +56,12 @@ Tool Output:Input parsing error: <string>:1 Unexpected "}}" at column 65 Please 
 6. Add ratings for restaurants, attractions, and hotels if available.
 7. You must add cost for transportation, attractions, accommodation, and dining.
 8. If no date specified, start planning from the day after {current_date}.
-9. DO NOT SUMMARIZE THE TOTAL COST AT THE END OF THE ITINERARY. 
 
 ## Itinerary Format Example
-
+Before the itinerary, you must output the basic information which extracting from the user's requirements.DO NOT SUMMARIZE THE TOTAL COST AT THE END OF THE ITINERARY. 
+Example query and Itinerary:
+query: I want to travel from Los Angeles, CA to Washington, DC during October 16 to October 18, 2024 with a budget of $800.
+itinerary you provided: strictly follow the format below:
 <Itinerary:
 Basic Information:
 - Number of days: 3
@@ -82,32 +72,22 @@ Basic Information:
 - Cities:
   - Los Angeles, CA
   - Washington, DC
-- Budgets(Note, budgets is not equal to total cost):
-  - Transportation budget: unlimited(if the user does not provide a budget about a certain item, then the budget is unlimited)
-  - Attraction budget: unlimited
-  - Accommodation budget: unlimited
-  - Dining budget: unlimited
-  - Total budget: unlimited
+- User's Required Budgets: $800(Use 'unlimited' if the user does not provide a budget)
 
-### **Day 1: March 16, 2022**
+
+
+### **Day 1: October 16, 2024**
 ...
-
-### **Day 2: March 17, 2022**
-
+### **Day 2: October 17, 2024**
 #### **Morning:**
-
 - **Hotel Breakfast at Marriott Hotel**
 - **Smithsonian National Air and Space Museum (Rating: 4.7, cost: Free)**
   - Spend the morning exploring fascinating exhibits, including historic airplanes and space artifacts.
-
 #### **Afternoon:**
-
 - **Lunch at Old Ebbitt Grill (Rating: 4.6, cost: $50/person)** // use cost for a single person please
 - **Smithsonian National Museum of American History (Rating: 4.6, cost: Free)**
   - Discover iconic exhibits such as the Star-Spangled Banner and presidential artifacts.
-
 #### **Evening:**
-
 - **Dinner at Zaytinya by Chef José Andrés (Rating: 4.6, cost: $80/person)**
 - **Relax at Marriott Hotel (Rating: 4.6)**
   - Use hotel amenities including the pool or the bar to unwind after a busy day.
@@ -115,6 +95,10 @@ Basic Information:
 >
 
 {extra_requirements}
+## User Requirements
+{query}
+
+
 Let's begin!
 """
 
@@ -124,7 +108,7 @@ PLAN_CHECKER_PROMPT_BUDGET = """# Budget Analyst
 You are a budget analyst, and your task is to extract the calculation formula for each expense item from the itinerary provided by the user.
 
 ## Workflow
-Let’s reason step by step:
+Let’s think step by step:
 1. Extract key information such as the number of people, budget, and number of days from the itinerary.
 2. For each day, describe and extract the calculation formula for expenses including transportation, attractions, accommodation, and meals.
 3. After extracting all expenses for all days, output "Summary" to combine the expenses for each day.
@@ -135,6 +119,7 @@ Let’s reason step by step:
 - For each day, describe how each expense is calculated, then provide the formula.
 - Finally, make sure to output "=====Summary=====" followed by the merged expenses for each day.
 - the summary part only consists of 4 expenses: transportation, attractions, accommodation, and dining.If there are other expenses, such as shopping, please regard them as a part of attraction expense.
+- Do not use any markdown format in the output.
 - DO NOT FORGET TO ADD FIELD 'UNIT' IN THE SUMMARY PART.
 
 ## Output Example
@@ -170,13 +155,16 @@ Dining: 50 * 2 + (10 + 50 + 50) * 2 + (17 + 24) * 2
 ```
 """
 
-JUDGE_BUDGET_PROMPT = "Below are the calculation results for various budgets: {expense_info}\nPlease determine whether the budget meets the user's requirements(the budgets in part 'Basic Information' before the part of itinerary). If it does, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else. For budgets using vague terms, such as 'moderate', please be inclusive when judging."
+JUDGE_BUDGET_PROMPT = """Below are the calculation results for various expenses for the itinerary: 
+{expense_info}
 
-BUDGET_ADVICE_PROMPT = "Which budget item does not meet the requirements? Please provide a brief suggestion."
+Please determine whether the expenses meet the required budgets(the budgets in part 'Basic Information' before the part of itinerary).We consider the expenses meet the required budgets if (1)all the expenses are not greater than the required budgets. (2)the total budget is not less than 80% of the required total budget. If it does, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else. For budgets using vague terms, such as 'moderate', please be inclusive when judging."""
+
+BUDGET_ADVICE_PROMPT = "Why is the itinerary rejected in the budget check? Please provide a brief suggestion."
 
 PLAN_CHECKER_PROMPT = """# Itinerary Reviewer
 
-You are a professional itinerary reviewer, responsible for reviewing itineraries provided by users to ensure they meet user needs and align with best practices for travel planning.
+You are a professional itinerary reviewer, responsible for reviewing itineraries provided by users to ensure they meet user needs and align with best practices for travel planning.**You assume the provided itinerary's budget has already met the user's requirements**.Do not consider the budget when reviewing, do not give any advice about the budget.
 {extra_requirements}
 
 ## Review Criteria (All requirements must be met for approval)
@@ -187,7 +175,6 @@ You are a professional itinerary reviewer, responsible for reviewing itineraries
 - Unique Experiences: The itinerary should include cultural activities and local specialty cuisine to help travelers better understand the local culture and history.
 - Flexibility: The itinerary should have at least one segment of free exploration time.
 - Ensure outbound and return transportation is arranged(has cost and flight number).
-- Budget Control: (1)Compare the user's required budgets with the expense summary. If any item exceeds the budget, the itinerary will not be approved. (2)On the other hand, the total budget for the itinerary must not fall significantly below the user's budget. If the current budget is below 80% of the user's budget, it cannot be approved.
 - If the input is not an itinerary, output "Rejected" anyway.
 
 ## User Requirements
@@ -196,7 +183,10 @@ current date: {current_date}
 
 """
 
-ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:\n{plan}\nExpense Summary:\n{expense_info}\nPlease analyze step-by-step based on the dimensions in the 'Review Criteria'."""
+ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:
+{plan}
+
+Please analyze step-by-step based on the dimensions in the 'Review Criteria'."""
 
 JUDGE_REASONABILITY_PROMPT = """Does the itinerary meet all the criteria? If so, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else."""
 
@@ -208,7 +198,7 @@ RATING_SUMMARY_SYSTEM_PROMPT = """# Rating Accumulation Analyst
 You are a rating accumulation analyst, and your task is to extract and accumulate the ratings of each restaurant, attraction, and hotel from the itinerary provided by the user.
 
 ## Workflow
-Let’s reason step by step:
+Let’s think step by step:
 1. Extract the names and corresponding ratings of all restaurants, attractions, and hotels from the itinerary.
 2. For each day, separately accumulate the ratings of restaurants, attractions, and hotels.
 3. After accumulating the ratings for all days, output "Summary", merging the accumulated results for each day.
@@ -217,6 +207,7 @@ Let’s reason step by step:
 - Only extract and provide the calculation formulas, do not solve any of the formulas. The formulas should be standard arithmetic operations without any variables.
 - For each day, describe each rating accumulation item, then provide the formula.
 - Finally, make sure to output "=====Summary=====", followed by the merged accumulated results for each day.
+- Do not use any markdown format in the output.
 
 ## Output Example
 Output the rating accumulation analysis strictly according to the following template:
@@ -249,7 +240,7 @@ COUNT_POI_SYSTEM_PROMPT = """# POI Counter
 You are a POI counter, and your task is to count the number of different types of POIs in the itinerary provided by the user.
 
 ## Workflow
-Let's reason step by step:
+Let's think step by step:
 1. Count the number of restaurants and attractions for each day separately.
 2. Finally, output "=====Summary=====", followed by the accumulated results for each day.
 3. the number of accommodations is directly the number of days provided in the itinerary minus one.

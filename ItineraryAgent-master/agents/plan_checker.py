@@ -107,7 +107,7 @@ class PlanChecker:
     def __init__(self, **kwargs) -> None: 
         kwargs['model'] = kwargs.get('model', 'gpt-4o')
         kwargs['temperature'] = kwargs.get('temperature', 0)
-        kwargs['is_verbose'] = False
+        kwargs['is_verbose'] = True # tmp
         self.kwargs = kwargs
         self.model = OpenAIChat(**kwargs)
         
@@ -132,18 +132,18 @@ class PlanChecker:
         response, history = self.model.chat(prompt=plan, history=history, meta_instruction=sys_prompt)
         
         self.expense_info = calculate_budget(response)
-        # self.model.kwargs['model'] = 'gpt-4o'
-        # response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(expense_info="\n"+str(self.expense_info)),
-        #                            history=history,
-        #                            meta_instruction="You are a Budget Analyst.")
+        self.model.kwargs['model'] = 'gpt-4o'
+        response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(expense_info="\n"+str(self.expense_info)),
+                                   history=history,
+                                   meta_instruction="You are a Budget Analyst.")
         
-        # print("budget check result:", response)
-        # if not 'approved' in response.splitlines()[-1].lower():
-        #     print("start budget advice")
-        #     response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
-        #                            history=history,
-        #                            meta_instruction=sys_prompt)
-        #     return response+f"Current budget for each item is as follows：\n{str(self.expense_info)}\n"
+        print("budget check result:", response)
+        if not 'approved' in response.splitlines()[-1].lower():
+            print("start budget advice")
+            response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
+                                   history=history,
+                                   meta_instruction=sys_prompt)
+            return response+f"Current budget for each item is as follows：\n{str(self.expense_info)}\n"
         return None
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
@@ -153,12 +153,12 @@ class PlanChecker:
         
         self.model.kwargs['model'] = 'gpt-4o'
         response, history = self.model.chat(
-            prompt=ANALYZE_REASONABILITY_PROMPT.format(plan=plan, expense_info=self.expense_info), 
+            prompt=ANALYZE_REASONABILITY_PROMPT.format(plan=plan), 
             history=history, 
             meta_instruction=sys_prompt)
         
         response, history = self.model.chat(
-            prompt=JUDGE_REASONABILITY_PROMPT.format(plan=plan, expense_info=self.expense_info), 
+            prompt=JUDGE_REASONABILITY_PROMPT.format(plan=plan), 
             history=history, 
             meta_instruction=sys_prompt)
         if not 'approved' in response.splitlines()[-1].lower():
@@ -184,6 +184,13 @@ class PlanChecker:
         self.poi_count = count_poi(response)
 
     def check_plan(self, plan, query, extra_requirements='') -> str:
+
+        # 先检查基本面
+        reasonability_result = self._reasonability_check(plan, query, extra_requirements)
+        if reasonability_result:
+            return reasonability_result
+
+        # 行程通过，检查预算
         try:
             budget_result = self._budget_check(plan, query, extra_requirements)
         except Exception as e:
@@ -191,10 +198,8 @@ class PlanChecker:
             budget_result = "Unable to calculate expenses. Please provide more detailed cost information in the itinerary!"
         if budget_result:
             return budget_result
-        reasonability_result = self._reasonability_check(plan, query, extra_requirements)
-        if reasonability_result:
-            return reasonability_result
-
+        
+        # 行程通过，计算评分和POI数量
         self._rating_summary(plan)
         self._count_poi(plan)
         
@@ -214,6 +219,7 @@ class PlanChecker:
             self.average_rating[category] = round(total_rating / total_count, 2) if total_count > 0 else 0.0
         
         print(f"Average rating: {self.average_rating}")
+        
         
         return "No more suggestion"
 
