@@ -16,7 +16,7 @@ const ratingOptions = [...Array(11)].map((_, i) => ({
 // Create a reusable rating selector component
 const RatingSelect = ({ label, value, onChange }) => (
   <div className="flex flex-col max-w-xs">
-    <div className="block text-sm font-medium text-gray-700">{label}</div>
+    <div className="block text-sm font-medium text-white">{label}</div>
     <Select
       label="Select rating"
       placeholder="Select rating"

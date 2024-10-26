@@ -7,9 +7,13 @@
 
 .App {
   text-align: center;
-  max-width: 1200px; /* 提高页面宽度，让内容不显得太紧凑 */
-  margin: 40px auto;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 15px;
+  box-sizing: border-box;
 }
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -68,17 +72,22 @@
 
 .flex-chat-container {
   display: flex;
-  flex-direction: row; /* 修正 flex-direction 为 row */
-  gap: 20px; 
-  justify-content: space-between; /* 均匀分布子元素 */
+  flex-direction: row;
+  gap: 15px;
+  justify-content: center;
   margin-top: 20px;
   width: 100%;
+  flex-wrap: wrap;
 }
+
 .chat-box {
-  max-width: 30%; /* 每个 chat-box 的最大宽度 */
   flex: 1;
-  box-sizing: border-box; /* 确保 padding 和 border 不会超过最大宽度 */
+  min-width: 300px;
+  max-width: 100%;
+  margin-bottom: 20px;
+  box-sizing: border-box;
 }
+
 /* 统一聊天框样式 */
 .gpt-chat-box,
 .ourmodel-chat-box,
@@ -137,25 +146,41 @@
 
 
 /* 响应式设计：在屏幕较小时调整布局 */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
   .flex-chat-container {
-    flex-direction: column; /* 切换为纵向排列 */
+    flex-wrap: wrap;
   }
-
-  button {
-    width: 100%; /* 移动端按钮占满宽度 */
-    margin-top: 10px;
-  }
-
-  input {
-    width: 100%; /* 输入框占满宽度 */
+  
+  .chat-box {
+    width: 100%;
+    min-width: unset;
   }
 }
-.chat-box {
-  max-width: 100%; /* 每个 chat-box 的最大宽度 */
-  flex: 1;
-  box-sizing: border-box; /* 确保 padding 和 border 不会超过最大宽度 */
+
+@media (max-width: 768px) {
+  .App {
+    padding: 0 10px;
+  }
+  
+  .flex-chat-container {
+    flex-direction: column;
+  }
+
+  .chat-box {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .input-box {
+    width: 100%;
+  }
+
+  .Textarea {
+    width: 100%;
+    max-width: 100%;
+  }
 }
+
 .rating-section {
   display: flex;
   flex-direction: column;
@@ -168,7 +193,7 @@
 
 .rating-section label {
   font-weight: bold;
-  color: #333;
+  color: white;
   margin-bottom: 5px;
 }
 

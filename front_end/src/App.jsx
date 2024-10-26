@@ -4,7 +4,7 @@ import { RouterProvider } from "react-router-dom"
 import router from './Router';
 export default function App() {
   return (
-    <div className="w-screen flex flex-col">
+    <div className="w-full flex flex-col">
     <NavBar />
     <RouterProvider router={router} />
   </div>
