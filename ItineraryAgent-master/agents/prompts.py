@@ -58,7 +58,7 @@ If you receive an explanation of a failed call, please correct your output accor
 8. If no date specified, start planning from the day after {current_date}.
 
 ## Itinerary Format Example
-Before the itinerary, you must output the basic information which extracting from the user's requirements.DO NOT SUMMARIZE THE TOTAL COST AT THE END OF THE ITINERARY. 
+Before the itinerary, you must output the basic information which extracting from the user's requirements.DO NOT SUMMARIZE/ESTIMATE THE TOTAL COST IN THE ITINERARY. 
 Example query and Itinerary:
 query: I want to travel from Los Angeles, CA to Washington, DC during October 16 to October 18, 2024 with a budget of $800.
 itinerary you provided: strictly follow the format below:
@@ -158,7 +158,7 @@ Dining: 50 * 2 + (10 + 50 + 50) * 2 + (17 + 24) * 2
 JUDGE_BUDGET_PROMPT = """Below are the calculation results for various expenses for the itinerary: 
 {expense_info}
 
-Please determine whether the expenses meet the required budgets(the budgets in part 'Basic Information' before the part of itinerary).We consider the expenses meet the required budgets if (1)all the expenses are not greater than the required budgets. (2)the total budget is not less than 80% of the required total budget. If it does, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else. For budgets using vague terms, such as 'moderate', please be inclusive when judging."""
+Please determine whether the expenses meet the required budgets(the budgets in part 'Basic Information' before the part of itinerary).We consider the expenses meet the required budgets if (1)all the expenses are not greater than the required budgets. (2)the total expenses >= 80% of the required total budget for fully utilizing the budget. If it does, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else. For budgets using vague terms, such as 'moderate', please be inclusive when judging."""
 
 BUDGET_ADVICE_PROMPT = "Why is the itinerary rejected in the budget check? Please provide a brief suggestion."
 

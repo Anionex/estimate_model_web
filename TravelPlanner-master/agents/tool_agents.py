@@ -773,7 +773,15 @@ def takedown_plan(plan_info):
 
 if __name__ == '__main__':
     # 先把追加文档清空
-    with open("xx_react_agent_response1.txt", "w") as f:
+    # 获取项目根目录（使用绝对路径）
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    log_path = os.path.join(project_root, "xx_react_agent_response1.txt")
+    
+    # 确保父目录存在
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    
+    # 清空日志文件
+    with open(log_path, "w", encoding='utf-8') as f:
         f.write("")
     # takedown_plan({
     #     "itinerary": "Test!\nI want to go to the moon.\nDo you know any places on the moon?",

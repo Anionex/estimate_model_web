@@ -107,7 +107,7 @@ class PlanChecker:
     def __init__(self, **kwargs) -> None: 
         kwargs['model'] = kwargs.get('model', 'gpt-4o')
         kwargs['temperature'] = kwargs.get('temperature', 0)
-        kwargs['is_verbose'] = True # tmp
+        kwargs['is_verbose'] = False 
         self.kwargs = kwargs
         self.model = OpenAIChat(**kwargs)
         
