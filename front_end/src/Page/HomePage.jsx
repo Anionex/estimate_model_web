@@ -535,12 +535,12 @@ function HomePage() {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between sm:justify-center items-center gap-4 w-full max-w-md mx-auto" style={{ marginTop: '30px' }}>
-        <Button onClick={handleSubmitRatings} className="w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row justify-between sm:justify-center items-center gap-4 w-full max-w-4xl mx-auto px-4" style={{ marginTop: '30px' }}>
+        <Button onClick={handleSubmitRatings} className="w-full sm:w-auto text-sm sm:text-base whitespace-normal h-auto py-2">
         Submit all ratings and feedback
         </Button>
         
-        <Button onClick={handleShowFeedback} className="w-full sm:w-auto">
+        <Button onClick={handleShowFeedback} className="w-full sm:w-auto text-sm sm:text-base whitespace-normal h-auto py-2">
         Additional feedback after ratings (Optional)
         </Button>
       </div>
