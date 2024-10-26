@@ -22,9 +22,12 @@ export default function NavBar() {
     <Navbar 
       onMenuOpenChange={setIsMenuOpen}
       maxWidth="full"
+      style={{ marginBottom: '40px' }}
     >
       <div className="hidden max-sm:flex">
-        <NavbarMenuToggle aria-label={isMenuOpen ? "Close menu" : "Open menu"} />
+        <NavbarMenuToggle aria-label={isMenuOpen ? "Close menu" : "Open menu"} 
+        style={{ padding: '15px' }} 
+        />
       </div>
 
       <NavbarBrand>

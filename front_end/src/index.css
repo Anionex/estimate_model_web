@@ -13,5 +13,5 @@ body, html {
   }
 body {
   background-color: #000000; /* 或者你想要的任何颜色 */
-  min-height: 100vh;
+  min-height: 150vh;
 }

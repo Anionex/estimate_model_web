@@ -9,8 +9,8 @@
   text-align: center;
   width: 100%;
   max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 15px;
+  margin: 40 auto;
+  padding: 0 150px;
   box-sizing: border-box;
 }
 
@@ -235,6 +235,7 @@
 .message {
   white-space: pre-wrap; /* 保持换行和空格 */
 }
+
 
 
 
