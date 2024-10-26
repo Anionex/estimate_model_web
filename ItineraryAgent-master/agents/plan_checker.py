@@ -132,18 +132,18 @@ class PlanChecker:
         response, history = self.model.chat(prompt=plan, history=history, meta_instruction=sys_prompt)
         
         self.expense_info = calculate_budget(response)
-        self.model.kwargs['model'] = 'gpt-4o'
-        response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(expense_info="\n"+str(self.expense_info)),
-                                   history=history,
-                                   meta_instruction="You are a Budget Analyst.")
+        # self.model.kwargs['model'] = 'gpt-4o'
+        # response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(expense_info="\n"+str(self.expense_info)),
+        #                            history=history,
+        #                            meta_instruction="You are a Budget Analyst.")
         
-        print("budget check result:", response)
-        if not 'approved' in response.splitlines()[-1].lower():
-            print("start budget advice")
-            response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
-                                   history=history,
-                                   meta_instruction=sys_prompt)
-            return response+f"Current budget for each item is as follows：\n{str(self.expense_info)}\n"
+        # print("budget check result:", response)
+        # if not 'approved' in response.splitlines()[-1].lower():
+        #     print("start budget advice")
+        #     response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
+        #                            history=history,
+        #                            meta_instruction=sys_prompt)
+        #     return response+f"Current budget for each item is as follows：\n{str(self.expense_info)}\n"
         return None
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))

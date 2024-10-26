@@ -187,7 +187,7 @@ You are a professional itinerary reviewer, responsible for reviewing itineraries
 - Unique Experiences: The itinerary should include cultural activities and local specialty cuisine to help travelers better understand the local culture and history.
 - Flexibility: The itinerary should have at least one segment of free exploration time.
 - Ensure outbound and return transportation is arranged(has cost and flight number).
-- Budget Control: The total budget for the itinerary must not fall significantly below the user's budget. If the current budget is below 80% of the user's budget, it cannot be approved.
+- Budget Control: (1)Compare the user's required budgets with the expense summary. If any item exceeds the budget, the itinerary will not be approved. (2)On the other hand, the total budget for the itinerary must not fall significantly below the user's budget. If the current budget is below 80% of the user's budget, it cannot be approved.
 - If the input is not an itinerary, output "Rejected" anyway.
 
 ## User Requirements
@@ -196,7 +196,7 @@ current date: {current_date}
 
 """
 
-ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:\n{plan}\nBudget Summary:\n{expense_info}\nPlease analyze step-by-step based on the dimensions in the 'Review Criteria'."""
+ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:\n{plan}\nExpense Summary:\n{expense_info}\nPlease analyze step-by-step based on the dimensions in the 'Review Criteria'."""
 
 JUDGE_REASONABILITY_PROMPT = """Does the itinerary meet all the criteria? If so, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else."""
 
