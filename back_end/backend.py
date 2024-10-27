@@ -136,6 +136,10 @@ def is_query_available():
         parsed_query = parse_query(query)
     except Exception as e:
         return jsonify({'error': f"Error parsing query: {str(e)}"}), 500
+    print("parsed_query: ", parsed_query)
+    # 检查是否是自相矛盾的请求
+    if parsed_query['is_the_request_self_contradictory'] == "True":
+        return jsonify({'error': 'The request is self-contradictory.Please revise your request.'}), 400
     
     # 检查parsed_query是否满足条件
     current_date = datetime.now().date()
@@ -146,7 +150,7 @@ def is_query_available():
     
     # 检查条件1: 行程时间在当前日期和两个月后之间
     if departure_date < current_date or return_date > two_months_later:
-        return jsonify({'error': 'The itinerary should be planned within the time frame from today to two months later.'}), 400
+        return jsonify({'error': f'The itinerary should be between {current_date} and {two_months_later}.'}), 400
     
     # 检查条件2: 行程持续时间不超过20天
     trip_duration = (return_date - departure_date).days
@@ -165,6 +169,7 @@ def parse_query(query) -> dict:
 {
     "departure_date": "YYYY-MM-DD",(default: {current_date})
     "return_date": "YYYY-MM-DD",
+    "is_the_request_self_contradictory": "True" or "False"
 }    
 DO NOT output output anything except the json.
 """
@@ -177,7 +182,7 @@ DO NOT output output anything except the json.
         while retries < max_retries:
             try:
                 completion = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-4o",
                     messages=[{"role": "system", "content": parser_prompt},
                               {"role": "user", "content": query}],
                 )
