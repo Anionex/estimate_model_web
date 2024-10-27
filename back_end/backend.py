@@ -138,7 +138,7 @@ def is_query_available():
         return jsonify({'error': f"Error parsing query: {str(e)}"}), 500
     print("parsed_query: ", parsed_query)
     # 检查是否是自相矛盾的请求
-    if parsed_query['is_the_request_self_contradictory'] == "True":
+    if parsed_query['is_the_request_date_self_contradictory'] == "True":
         return jsonify({'error': 'The request is self-contradictory.Please revise your request.'}), 400
     
     # 检查parsed_query是否满足条件
@@ -166,13 +166,13 @@ def parse_query(query) -> dict:
     Parse the query to extract the departure date and destination city.
     """
     parser_prompt = """parse the given itinerary planning request into json format as follows:
-{
-    "departure_date": "YYYY-MM-DD",(default: {current_date})
+{{
+    "departure_date": "YYYY-MM-DD", 
     "return_date": "YYYY-MM-DD",
-    "is_the_request_self_contradictory": "True" or "False"
-}    
-DO NOT output output anything except the json.
-"""
+    "is_the_request_date_self_contradictory": "True" or "False"
+}}    
+departure at {current_date} if not specified. DO NOT output output anything except the json.
+""".format(current_date=datetime.now().date())
     # "destination": "city name",(default: Kennesaw, GA)
     # "budget": "number with unit"(default: unlimited)
     client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
