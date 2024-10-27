@@ -346,7 +346,9 @@ if __name__ == "__main__":
     # {"origin":"ZGN","destination":"LAX","departure_date":"2024-10-19"}
     # result = get_flights("ZGN", "LAX", "2024-10-19")
     # result = get_attractions("San Francisco")
-    result = get_accommodations("San Francisco", "2024-10-19", "2024-10-20", 1)
+    # result = get_accommodations("San Francisco", "2024-10-19", "2024-10-20", 1)
+    # Travel from Las Vegas to Stockton
+    result = get_distance_matrix('Las Vegas, US', 'Stockton, US', 'driving')
     end_time = time.time()
     
     print(result)

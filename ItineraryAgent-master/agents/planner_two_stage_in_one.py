@@ -24,18 +24,18 @@ planner_two_stage_in_one = ReactAgent(model="gpt-4o", stop=['>']) # import this
 #         }
 #     ]
 # )  
-planner_two_stage_in_one.tools.add_tool(
-    name_for_human="Get Recommend City",
-    name_for_model="get_recommend_city",
-    func=get_recommend_city,
-    description="Used whenever you need to retrieve information about recommended cities for a specified province/country/area.Must be used when the user does not specify the city.",
-    parameters=[
-        {
-            'name': 'area',
-            'description': 'Area name',
-        }
-    ]
-)
+# planner_two_stage_in_one.tools.add_tool(
+#     name_for_human="Get Recommend City",
+#     name_for_model="get_recommend_city",
+#     func=get_recommend_city,
+#     description="Used whenever you need to retrieve information about recommended cities for a specified province/country/area.Must be used when the user does not specify the city.",
+#     parameters=[
+#         {
+#             'name': 'area',
+#             'description': 'Area name',
+#         }
+#     ]
+# )
 
 planner_two_stage_in_one.tools.add_tool(
     name_for_human="google search",

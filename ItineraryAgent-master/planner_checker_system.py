@@ -55,7 +55,6 @@ def planner_checker_loop(query, extra_requirements=''):
             if not checker.expense_info or not checker.average_rating:
                 try:
                     checker._budget_check(plan, query, extra_requirements)
-                    
                 except Exception as e:
                     print(f"Failed to calculate expense_info: {e}")
 

@@ -276,7 +276,7 @@ def get_distance_matrix(origin, destination, mode, language=GLOBAL_LANGUAGE):
     return f"{mode.capitalize()}, from {origin} to {destination}, duration: {duration}, distance: {distance}"
 
 AMADEUS_MAX_LENGTH = 28
-@disk_cache(expire=timedelta(hours=12))
+# @disk_cache(expire=timedelta(hours=12))
 def get_flights(origin, destination, date):
     try:
         print("origin, destination:", origin, destination)
@@ -339,7 +339,9 @@ if __name__ == "__main__":
     # {"origin":"ZGN","destination":"LAX","departure_date":"2024-10-19"}
     # result = get_flights("ZGN", "LAX", "2024-10-19")
     # result = get_attractions("San Francisco")
-    result = get_accommodations("San Francisco", "2024-10-19", "2024-10-20", 1)
+    # result = get_accommodations("San Francisco", "2024-10-19", "2024-10-20", 1)
+    # FlightSearch[PIE, RFD, 2024-10-24]
+    result = get_flights('PIE', 'RFD', input('YYYY_MM_DD'))
     end_time = time.time()
     
     print(result)
