@@ -38,7 +38,7 @@ function AboutPage() {
         <h2>Welcome to Our GeoAI Survey!</h2>
         <p>We are a research team focused on exploring and improving the practical applications of GeoAI and generative AI  in the tourism industry.
            Our team consists of members from Kennesaw State University and Jinan University.
-            In this survey, we are comparing user satisfaction with three AI models: ChatGPT, the xx model, and our own improved GeoAI model.
+            In this survey, we are comparing user satisfaction with three AI models: ChatGPT, the TravelPlanner Agent, and our own improved GeoAI model.
              (Please note, the names of the three models will be hidden during testing.)</p>
         <p>We invite you to evaluate the search results provided by each model and rate their performance. 
           Rest assured, all information collected will remain strictly confidential and will be used exclusively for academic research.
