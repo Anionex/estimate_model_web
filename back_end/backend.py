@@ -314,7 +314,7 @@ def ask_gptmodel(messages):
         return {"source": "gpt", "response": "test"}
     client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-plus",
         messages=messages,
     )
     gpt_response = completion.choices[0].message.content
