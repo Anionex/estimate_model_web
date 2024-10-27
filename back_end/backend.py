@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import time
 from flask import Flask, request, jsonify, Response
@@ -119,6 +120,74 @@ def start_session():
     # 返回新插入记录的 ID 作为 conversation_id
     return jsonify({"conversation_id": new_conversation.id})
 
+from datetime import datetime, timedelta
+
+@app.route('/is_query_available', methods=['POST'])
+def is_query_available():
+    """
+    Check if the query can be processed by our model.
+    The query is available only when:
+    1. requested itinerary's time interval is between current date and 2 months later
+    2. requested itinerary's duration is within 20 days
+    """
+    data = request.json
+    query = data.get('query')
+    try:
+        parsed_query = parse_query(query)
+    except Exception as e:
+        return jsonify({'error': f"Error parsing query: {str(e)}"}), 500
+    
+    # 检查parsed_query是否满足条件
+    current_date = datetime.now().date()
+    two_months_later = current_date + timedelta(days=60)
+    
+    departure_date = datetime.strptime(parsed_query['departure_date'], "%Y-%m-%d").date()
+    return_date = datetime.strptime(parsed_query['return_date'], "%Y-%m-%d").date()
+    
+    # 检查条件1: 行程时间在当前日期和两个月后之间
+    if departure_date < current_date or return_date > two_months_later:
+        return jsonify({'error': 'The itinerary should be planned within the time frame from today to two months later.'}), 400
+    
+    # 检查条件2: 行程持续时间不超过20天
+    trip_duration = (return_date - departure_date).days
+    if trip_duration > 20:
+        return jsonify({'error': 'The itinerary should be within 20 days.'}), 400
+    
+    return jsonify({'message': 'Query is available!'}), 200
+
+    
+
+def parse_query(query) -> dict:
+    """
+    Parse the query to extract the departure date and destination city.
+    """
+    parser_prompt = """parse the given itinerary planning request into json format as follows:
+{
+    "departure_date": "YYYY-MM-DD",(default: {current_date})
+    "return_date": "YYYY-MM-DD",
+}    
+DO NOT output output anything except the json.
+"""
+    # "destination": "city name",(default: Kennesaw, GA)
+    # "budget": "number with unit"(default: unlimited)
+    client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
+    while True:
+        max_retries = 3
+        retries = 0
+        while retries < max_retries:
+            try:
+                completion = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "system", "content": parser_prompt},
+                              {"role": "user", "content": query}],
+                )
+                parsed_query = completion.choices[0].message.content.strip().strip("```json").strip("```").strip()
+                return json.loads(parsed_query)
+            except Exception as e:
+                retries += 1
+                if retries == max_retries:
+                    raise
+                time.sleep(1)
 
 @app.route('/ask_gpt', methods=['POST'])
 def ask_gpt():
@@ -344,15 +413,7 @@ def ask_tripadvisermodel(messages) -> dict:
             stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME) 
             if process.returncode != 0:
                 print("错误输出:", stderr)
-                return {
-                    "itinerary": "Model failed to complete the task.",
-                    "average_rating": {
-                        "Attractions": None,
-                        "Restaurants": None,
-                        "Accommodations": None,
-                        "Overall": None
-                    }
-                }
+                return MODEL_FAIL_TO_COMPLETE_RESPONSE
             output = stdout
             
         except subprocess.TimeoutExpired:
@@ -402,17 +463,9 @@ def ask_ourmodel(messages) -> dict:
             stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME)
             if process.returncode != 0:
                 kill_proc_tree(process.pid)
-                return {
-                    "itinerary": "Model failed to complete the task.",
-                    "average_rating": {
-                        "Attractions": None,
-                        "Restaurants": None,
-                        "Accommodations": None,
-                        "Overall": None
-                    }
-                }
+                print("Our model failed, traceback: \n", stderr)
+                return MODEL_FAIL_TO_COMPLETE_RESPONSE
             output = stdout
-            error = stderr
             
         except subprocess.TimeoutExpired:
             kill_proc_tree(process.pid)

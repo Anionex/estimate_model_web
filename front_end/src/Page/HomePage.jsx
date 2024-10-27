@@ -99,19 +99,28 @@ function HomePage() {
 
     const systemMessage = {"role": "system", "content": "You are a professional itinerary planner. Output the itinerary based on the user's request directly, do not ask for any additional information."};
     const userMessage = {"role": "user", "content": input};
-    
-    setNewMessage({
-      gpt: [systemMessage, userMessage],
-      ourmodel: [userMessage],
-      xxmodel: [userMessage]
-    });
-    
-
-    setgptLoading(true);
-    setourmodelLoading(true);
-    setxxmodelLoading(true);
 
     try {
+      // 首先检查查询是否可用
+      const availabilityResponse = await axios.post(ApiUtill.url_root + 'is_query_available', { query: input });
+      
+      if (availabilityResponse.status !== 200) {
+        // 如果查询不可用,显示错误消息并返回
+        alert(availabilityResponse.data.error || "Invalid Query");
+        return;
+      }
+
+      // 如果查询可用,继续执行原有的逻辑
+      setNewMessage({
+        gpt: [systemMessage, userMessage],
+        ourmodel: [userMessage],
+        xxmodel: [userMessage]
+      });
+
+      setgptLoading(true);
+      setourmodelLoading(true);
+      setxxmodelLoading(true);
+
       const response = await axios.post(ApiUtill.url_root + 'start_session', { query: input });
       const newConversationId = response.data.conversation_id;
       setConversationId(newConversationId);
@@ -123,7 +132,8 @@ function HomePage() {
       }));
 
     } catch (error) {
-      console.error("Error starting session:", error);
+      console.error("Error:", error);
+      alert(error.response?.data?.error || "发生错误,请稍后再试");
       setgptLoading(false);
       setourmodelLoading(false);
       setxxmodelLoading(false); 
