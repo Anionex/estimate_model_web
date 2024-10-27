@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
@@ -105,7 +106,9 @@ class Planner:
     def _build_agent_prompt(self, text, query) -> str:
         return self.agent_prompt.format(
             text=text,
-            query=query)
+            query=query,
+            current_date=datetime.now().strftime("%Y-%m-%d"), 
+            )
 
 
 class ReactPlanner:

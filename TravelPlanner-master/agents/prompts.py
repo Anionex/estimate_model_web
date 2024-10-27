@@ -147,6 +147,7 @@ Accommodation: -
 ***** Example Ends *****
 
 Given information: {text}
+If no date specified, start planning from the day after {current_date}.
 Query: {query}
 Travel Plan: Let's think step by step. First, """
 

@@ -8,9 +8,6 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../tools/planner")))
 
 
 os.environ['OUTPUT_DIR'] = './outputs'
-os.environ['MODEL_NAME'] = 'gpt-4o-mini'
-os.environ['OPENAI_API_KEY'] = 'sk-Opz25zl4iSRoXnwF87350eC7E5B9494bA3BfFfF4243c4331'
-os.environ['OPENAI_API_BASE'] = 'https://chatapi.onechats.top/v1'
 os.environ['GOOGLE_API_KEY'] = '1'
 os.environ['SET_TYPE'] = 'validation'
 import importlib
