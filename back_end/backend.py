@@ -16,6 +16,7 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=10)
 from flask_migrate import Migrate
+import hashlib  # 添加到文件顶部的导入部分
 
 
 
@@ -150,8 +151,7 @@ def is_query_available():
     
     # 检查条件1: 行程时间在当前日期和两个月后之间
     if departure_date < current_date or return_date > two_months_later:
-        return jsonify({'error': f'The itinerary should be between {current_date} and {two_months_later}.'}), 400
-    
+        return jsonify({'error': f'The itinerary should be between {current_date.strftime("%m/%d/%Y")} and {two_months_later.strftime("%m/%d/%Y")}.'}), 400
     # 检查条件2: 行程持续时间不超过20天
     trip_duration = (return_date - departure_date).days
     if trip_duration > 20:
@@ -397,14 +397,8 @@ def ask_gptmodel(messages):
 
 
 def ask_tripadvisermodel(messages) -> dict:
-    if DEBUG:
-        time.sleep(6)
-        return MODEL_FAIL_TO_COMPLETE_RESPONSE
     try:
-        # print("ask_tripadvisermodel received data: ",messages)
-        # input_data = messages
-        # query = next(item["content"] for item in input_data["query"] if item["role"] == "user")
-        query = messages #todo need to fix the messages format problem
+        query = messages
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
         process = subprocess.Popen(
             f'conda run -n estimate_web python {python_script} "{query}"',
@@ -416,7 +410,8 @@ def ask_tripadvisermodel(messages) -> dict:
         )
         
         try:
-            stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME) 
+            stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME)
+            save_model_output(query, stdout, stderr, "tripadviser")
             if process.returncode != 0:
                 print("错误输出:", stderr)
                 return MODEL_FAIL_TO_COMPLETE_RESPONSE
@@ -467,6 +462,7 @@ def ask_ourmodel(messages) -> dict:
         
         try:
             stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME)
+            save_model_output(query, stdout, stderr, "ourmodel")
             if process.returncode != 0:
                 kill_proc_tree(process.pid)
                 print("Our model failed, traceback: \n", stderr)
@@ -509,9 +505,34 @@ def kill_proc_tree(pid):
     except Exception as e:
         print(f"Kill process error: {e}")
 
+def save_model_output(query: str, stdout: str, stderr: str, model_name: str) -> None:
+    """保存模型输出到文件"""
+    # 生成query的MD5哈希值
+    query_hash = hashlib.md5(query.encode()).hexdigest()
+    
+    # 创建logs目录（如果不存在）
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # 生成时间戳
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # 保存stdout
+    stdout_filename = f"{log_dir}/{model_name}_{query_hash}_{timestamp}_stdout.log"
+    with open(stdout_filename, "w", encoding="utf-8") as f:
+        f.write(f"Query: {query}\n\n")
+        f.write(stdout)
+    
+    # 保存stderr（如果有）
+    if stderr:
+        stderr_filename = f"{log_dir}/{model_name}_{query_hash}_{timestamp}_stderr.log"
+        with open(stderr_filename, "w", encoding="utf-8") as f:
+            f.write(f"Query: {query}\n\n")
+            f.write(stderr)
 
 if __name__ == '__main__':
     app.run(debug=DEBUG, threaded=True)
+
 
 
 
