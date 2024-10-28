@@ -139,8 +139,8 @@ def is_query_available():
         return jsonify({'error': f"Error parsing query: {str(e)}"}), 500
     print("parsed_query: ", parsed_query)
     # 检查是否是自相矛盾的请求
-    if parsed_query['is_the_request_date_self_contradictory'] == "True":
-        return jsonify({'error': 'The request is self-contradictory.Please revise your request.'}), 400
+    # if parsed_query['is_the_request_date_self_contradictory'] == "True":
+    #     return jsonify({'error': 'The request is self-contradictory.Please revise your request.'}), 400
     
     # 检查parsed_query是否满足条件
     current_date = datetime.now().date()
