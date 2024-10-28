@@ -172,6 +172,7 @@ def parse_query(query) -> dict:
     "is_the_request_date_self_contradictory": "True" or "False"
 }}    
 departure at {current_date} if not specified. DO NOT output output anything except the json.
+When the user specifies both duration and dates, if the period between departure and return dates doesn't match the specified duration, set is_the_request_date_self_contradictory to True.
 """.format(current_date=datetime.now().date())
     # "destination": "city name",(default: Kennesaw, GA)
     # "budget": "number with unit"(default: unlimited)
