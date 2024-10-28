@@ -149,7 +149,7 @@ if __name__ == '__main__':
     plan_info = planner_checker_loop(query)
     # Format expense info as "key: value" pairs
     expense_str = '\n'.join([f"{k + ('' if k == 'Unit' else ' Cost')}: {v}" for k, v in plan_info['expense_info'].items()])
-    plan_info['itinerary'] = expense_str + "\n\n" + plan_info['itinerary']
+    plan_info['itinerary'] = 'Expense Summary:\n' + expense_str + "\n\n" + plan_info['itinerary']
     print("=====\nFinal Itinerary:\n=====")
     print(str(plan_info))
     
