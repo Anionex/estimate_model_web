@@ -34,7 +34,7 @@ def calculator(expression: str):
 def get_recommend_city(area: str):
     return web_apis.get_entity_attribute(area, "recommended travel cities", "Not Found")[0]
 
-def google_search(search_query: str, gl: str, ):
+def google_search(search_query: str, gl: str = 'The United States'):
     query = search_query
     payload = json.dumps({
         "q": query,
