@@ -12,35 +12,34 @@ You can use the following tools, with Tool Input in JSON format:
 {tool_descs}
 
 ## Output Format
-You use <Analysis:>, <Tool Invocation:> and <Tool Input:> tags to think and invoke tools.
-For example, when you want to get restaurant information in city A, you can output:
+You use <Analysis:>, <Tool Invocation:> and <Tool Input:> tags to think and invoke tools.For example, when you want to get restaurant information in city A, you can output:
 <Tool Invocation:RestaurantSearch>
 <Tool Input:{{"city":"A"}}>
-For example, when you want to select a restaurant preferred by the user from the restaurants you just got, you can output:
+When you want to select a restaurant preferred by the user from the restaurants you just got, you can output:
 <Analysis:I just got the restaurant information in city A, because the user prefers Japanese cuisine, so I choose the sushi restaurant Kushiro with a high rating>
 Use the <Itinerary:> tag to provide the complete itinerary.Format: <Itinerary: (write your itinerary here...,no estimate cost)>.
 
 ## Information Collection Rules
-1. First collect transportation information between cities. To collect the corresponding transportation information, you need to decide the time range for visiting each city. Default departure date: the day after {current_date}; Default departure city: Kennesaw, GA. You need to return to the departure city on the last day.
-
+Default departure date: the day after {current_date}; Default departure city: Kennesaw, GA.
+Please collect transportation details about departure and return journey.Do not arrange accommodation for the last day.Include return transportation details on the last day.
 
 ## Itinerary Arrangement Rules
-1. Include return transportation details on the last day, and do not arrange accommodation for the last day.
-2. Breakfast is usually eaten at the hotel, while lunch and dinner are chosen at local specialty restaurants.
-3. Use "Morning", "Afternoon", "Evening" to arrange time for each day.
-4. Provide rating and cost information for restaurants, attractions, hotels, and transportation. Example:
-Kushiro(cost: $25/person, rating:4.9); Visit the golden gate bridge(cost: free, rating:4.8); Take flight F92427(22:39-00:19, price: $244.63/person) back to San Francisco.Moreover, you need to provide a brief introduction for each attraction and restaurant.
-5. Do not fabricate information.
+1. Breakfast is usually eaten at the hotel, while lunch and dinner are chosen at local specialty restaurants.
+2. Use "Morning", "Afternoon", "Evening" to arrange time for each day.
+3. Provide rating and cost information for restaurants, attractions, hotels, and transportation. Example:
+Kushiro(cost: $25/person, rating:4.9); Visit the golden gate bridge(cost: free, rating:4.8); Take flight F92427(22:39-00:19, price: $244.63/person) back to San Francisco.
+4. Do not fabricate information.
 Recommend you to format the itinerary like this:
 <Itinerary:
 **Day N: Month Day, Year**
 Morning:
 POI(info)
-  - POI brief introduction
+  - POI recommendation reasons
 Afternoon:
 ...
 Evening:
 ...
+tips:...
 >
 
 {extra_requirements}
@@ -49,6 +48,9 @@ Evening:
 
 Let's begin!
 """
+
+PLANNER_PROMPT_WITH_REASONING_TRACE = """#Role
+Plan a new travel itinerary based on the tourism-related information gathered from tool calls, the old version of the itinerary, and the system feedback on the old version of the itinerary."""
 
 # ---审核智能体---
 PLAN_CHECKER_PROMPT_BUDGET = """# Budget Analyst
@@ -108,7 +110,23 @@ JUDGE_BUDGET_PROMPT = """Below are the calculation results for various expenses 
 Here are the user's requirements:
 "{query}"
 
-Please determine whether the expenses meet the user's requirements.We consider the expenses meet the required budgets if (1)all the expenses are not greater than the required budgets. (2)the total expenses >= 80% of the required total budget for fully utilizing the budget. If it does, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else. For budgets using vague terms, such as 'moderate', please be inclusive when judging."""
+Please determine whether the expenses meet the user's requirements.We consider the expenses meet the required budgets if (1)the expense is not greater than the required budget. (2)the total expense is greater than eighty percent of the required total budget. Your output should be in json format as follows:
+{{
+    "if_the_user_provides_budget": {{
+      "observations": "your observations",
+      "meets_criteria": true or false(if it is false, stop here)
+    }},
+    "expense_not_greater_than_required_budget": {{
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    "total_expense_greater_than_eighty_percent_of_budget": {{
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }}
+}}
+Do not output anything else.
+"""
 
 BUDGET_ADVICE_PROMPT = "Why is the itinerary rejected in the budget check? Please provide a brief suggestion."
 
@@ -118,14 +136,13 @@ You are a professional itinerary reviewer, responsible for reviewing itineraries
 {extra_requirements}
 
 ## Review Criteria (All requirements must be met for approval)
-- Basic Information consistency: The infomation, like budget in the itinerary must be consistent with the user's request.
 - Basic constraints: The itinerary must meet the user's basic requirements, such as the number of days and number of people. A common mistake is planning one more day than the required number of days (departure and return days are also counted as travel days!).
 - Information Completeness and Authenticity: The itinerary must not contain any tentative, missing, or fabricated information. For all restaurants, attractions, and accommodations, their cost and rating must be provided.
 - Personalized Requirements: If user has provided personalized requirements, the itinerary must meet them.
 - Reasonable Time Allocation: The itinerary should not have overly tight or too loose schedules.
 - Unique Experiences: The itinerary should include cultural activities and local specialty cuisine to help travelers better understand the local culture and history.
 - Flexibility: The itinerary should have at least one segment of free exploration time.
-- Ensure outbound and return transportation is arranged(has cost and flight number).
+- Ensure outbound and return transportation is arranged with cost and flight number.
 - If the input is not an itinerary, output "Rejected" anyway.
 
 ## User Requirements
@@ -137,9 +154,56 @@ current date: {current_date}
 ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:
 {plan}
 
-Please analyze step-by-step based on the dimensions in the 'Review Criteria'."""
+Please analyze step-by-step based on the dimensions in the 'Review Criteria'.Your output should be in json format as follows:
+{{
+  "Itinerary_Review": [
+    {{
+      "criteria": "Is an itinerary",
+      "observations": "your observations",
+      "meets_criteria": true or false(if it is false, stop here),
+    }},
+    {{
+      "criteria": "Basic Constraints",
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Information Completeness and Authenticity", 
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Personalized Requirements",
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Reasonable Time Allocation",
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Unique Experiences",
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Flexibility",
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Transportation Details",
+      "if_departure_day_transportation_cost_provided": true or false,
+      "if_return_day_transportation_cost_provided": true or false,
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }}
+  ]
+}}
 
-JUDGE_REASONABILITY_PROMPT = """Does the itinerary meet all the criteria? If so, output 'Approved'; otherwise, output 'Rejected'. Do not output anything else."""
+"""
+
 
 REASONABILITY_ADVICE_PROMPT = "Based on the analysis above, please provide concise suggestions for itinerary modification. Do not output an example of the modification. Do not output anything else."
 

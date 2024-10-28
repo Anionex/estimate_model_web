@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import sys
 import os
 import re
@@ -7,6 +8,9 @@ import time
 from tenacity import retry, stop_after_attempt, wait_fixed
 print(os.getcwd())
 sys.path.append(os.path.abspath(os.getcwd()))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+sys.path.append(os.path.join(current_dir, '..'))
 from chat_model import OpenAIChat
 from prompts import *
 from config import *
@@ -107,7 +111,7 @@ class PlanChecker:
     def __init__(self, **kwargs) -> None: 
         kwargs['model'] = kwargs.get('model', 'gpt-4o')
         kwargs['temperature'] = kwargs.get('temperature', 0)
-        kwargs['is_verbose'] = False 
+        kwargs['is_verbose'] = True
         self.kwargs = kwargs
         self.model = OpenAIChat(**kwargs)
         
@@ -138,15 +142,21 @@ class PlanChecker:
             query=query),
                                    history=history,
                                    meta_instruction="You are a Budget Analyst.")
+        try:
+            print("budget check result:", response)
+            response = response.strip().strip('```json').strip('```').strip()
+            response = json.loads(response)
         
-        print("budget check result:", response)
-        if not 'approved' in response.splitlines()[-1].lower():
-            print("start budget advice")
-            response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
-                                   history=history,
-                                   meta_instruction=sys_prompt)
-            return response+f"Current budget for each item is as follows：\n{str(self.expense_info)}\n"
-        return None
+            if not ((response['if_the_user_provides_budget']['meets_criteria'] == False) or (response['total_expense_greater_than_eighty_percent_of_budget']['meets_criteria'] and 
+                   response['expense_not_greater_than_required_budget']['meets_criteria'])):
+                print("start budget advice")
+                response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
+                                    history=history,
+                                    meta_instruction=sys_prompt)
+                return response+f"Current budget for each item is as follows：\n{str(self.expense_info)}\n"
+        except Exception as e:
+            print("Unable to parse budget check result:", e)
+            raise
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def _reasonability_check(self, plan, query, extra_requirements):
@@ -159,14 +169,25 @@ class PlanChecker:
             history=history, 
             meta_instruction=sys_prompt)
         
-        response, history = self.model.chat(
-            prompt=JUDGE_REASONABILITY_PROMPT.format(plan=plan), 
-            history=history, 
-            meta_instruction=sys_prompt)
-        if not 'approved' in response.splitlines()[-1].lower():
-            response, history = self.model.chat(prompt=REASONABILITY_ADVICE_PROMPT,
-                                                history=history,
-                                                meta_instruction=sys_prompt)
+        response = response.strip().strip('```json').strip('```').strip()
+        response = json.loads(response)
+        
+        # 修改判断逻辑，检查 Itinerary_Review 中每个条目的 meets_criteria
+        if not all(item["meets_criteria"] for item in response["Itinerary_Review"]): 
+            # 输出不满足的标准
+            failed_criteria = [
+                item["criteria"] 
+                for item in response["Itinerary_Review"] 
+                if not item["meets_criteria"]
+            ]
+            for criterion in failed_criteria:
+                print(f"The {criterion} criterion is not met.")
+            
+            response, history = self.model.chat(
+                prompt=REASONABILITY_ADVICE_PROMPT,
+                history=history,
+                meta_instruction=sys_prompt
+            )
             return response
         return None
 
@@ -231,8 +252,8 @@ def read_file(file_path):
 
 if __name__ == '__main__':
     plan_checker = PlanChecker()
-    plan = read_file('agents/example_plan.txt')
-    query = read_file('agents/example_query.txt')
+    plan = read_file(os.path.join(current_dir, 'example_plan.txt'))
+    query = read_file(os.path.join(current_dir, 'example_query.txt'))
     extra_requirements = ''
     response = plan_checker.check_plan(plan, query, extra_requirements)
     print(str(response))

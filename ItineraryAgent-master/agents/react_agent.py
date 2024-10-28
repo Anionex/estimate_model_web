@@ -90,7 +90,7 @@ class ReactAgent:
             if response.startswith(ANSWER_HEADER):
                 print("=====\nGET AN ITINERARY\n=====")
                 self.hit_final_answer = True
-            elif response.startswith(THOUGHT_HEADER):
+            elif response.startswith(THOUGHT_HEADER) or response.startswith("<Draft:"):
                 pass
             elif is_tool_input:
                 plugin_name, plugin_args = self.parse_latest_plugin_call(self.scratchpad+'\n'+ response)
@@ -124,6 +124,12 @@ class ReactAgent:
                 
                 
             self.scratchpad += '\n' + response
+            
+            # 限制 scratchpad 只保留最新的30次回复
+            responses = self.scratchpad.split(STOP_WORD)
+            if len(responses) > MAX_SCRATCHPAD_ITEMS:
+                self.scratchpad = STOP_WORD.join(responses[-MAX_SCRATCHPAD_ITEMS:])
+                
             if self.hit_final_answer:
                 return response
     

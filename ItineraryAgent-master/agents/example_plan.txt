@@ -1,108 +1,51 @@
-Basic Information:
-- Number of days: 5
-- Departure date: 2024-10-19
-- Return date: 2024-10-25
-- Number of people: 2
-- Cities:
-  - Los Angeles, CA
-  - San Francisco, CA
-- Budgets:
-  - Transportation budget: unlimited
-  - Attraction budget: unlimited
-  - Accommodation budget: unlimited
-  - Dining budget: unlimited
-  - Total budget: unlimited
+**Day 1: December 14, 2024**
+Morning:
+- Depart from Sacramento (SMF) on Flight F94144 at 12:31 PM
 
-### **Day 1: October 19, 2024**
-#### **Morning:**
-- Prepare for departure from Guilin, China.
+Afternoon:
+- Arrive in Atlanta (ATL) at 1:59 PM
+- Check into Aloft Atlanta Downtown(cost: $325.97 for 2 nights, rating: 4.05)
+  - A modern hotel located in the heart of downtown Atlanta, known for allowing parties and providing trendy accommodations.
+- Lunch at South City Kitchen Midtown(cost: $32/person, rating: 4.6)
+  - A lively spot known for classic Southern cuisine with a modern twist.
 
-#### **Afternoon:**
-- Lunch in Guilin.
+Evening:
+- Visit the High Museum of Art(cost: free, rating: 4.7)
+  - Renowned for its outstanding architecture and impressive collections.
+- Dinner at Lazy Betty(cost: $125/person, rating: 4.8)
+  - Creative tasting menus with modern culinary techniques and diverse cuisines for an exquisite dining experience.
 
-#### **Evening:**
-- **Flight from Guilin to Los Angeles**
-  - Flight: 3U3837, 21:55-20:25 (next day), price:  $444.41/person
+**Day 2: December 15, 2024**
+Morning:
+- Visit the Georgia Aquarium(cost: $32.95/person, rating: 4.6)
+  - One of the world's largest aquariums featuring thousands of marine species.
 
-### **Day 2: October 20, 2024**
+Afternoon:
+- Lunch at The Optimist (cost: $40/person, rating: 4.6)
+  - Known for exquisite seafood dishes and a rustic vibe.
+- Visit Atlanta Botanical Garden(cost: free, rating: 4.7)
+  - A 30-acre garden featuring beautiful plant collections in seasonal bloom.
+- Free exploration time 
+  - Use this time to explore local shops, visit lesser-known sights, or relax at a café.
 
-#### **Morning:**
-- Arrive in Los Angeles at 20:25, check in to **Aloft El Segundo Los Angeles Airport** (Rating: 4.2, price: 681.02 USD for 2 adults)
-- **Yang Chow Restaurant** (Rating: 4.5, Cost: $24/person)
+Evening:
+- Attend the musical "Charlie and the Chocolate Factory" at The Legacy Theatre (cost: $67/person)
+  - Engage in a whimsical, theatrical experience during this enchanting performance.
+- Late Dinner at Canoe(cost: $25/person, rating: 4.7)
+  - Located along the Chattahoochee River, offering a modern American menu with Southern accents.
 
-#### **Afternoon:**
-- Rest and settle into the hotel.
-- **Visit Griffith Observatory** (Rating: 4.7, cost: $0/person)
+**Day 3: December 16, 2024**
+Morning:
+- Visit the Martin Luther King, Jr. National Historical Park(cost: free, rating: 4.8)
+  - Explore the historic site honoring the life and work of Dr. King.
 
-#### **Evening:**
-- **Dinner at Golden Tree Restaurant** (Rating: 4.5, Cost: $25/person)
-- Relax at the hotel.
+Afternoon:
+- Lunch at Poor Calvin's(cost: $32/person, rating: 4.5)
+  - Fusion restaurant offering a creative blend of Asian and Southern cuisine.
+- Free exploration time 
+  - Opportunity to revisit favorite places or discover new ones in Atlanta.
 
-### **Day 3: October 21, 2024**
+- Check out from Aloft Atlanta Downtown
+- Depart from Atlanta (ATL) on Flight F91116 at 11:00 PM
+- Arrive back in Sacramento (SMF) at 6:04 AM on December 17
 
-#### **Morning:**
-- Breakfast at hotel.
-- **Visit The Getty** (Rating: 4.8, cost: $0/person)
-
-#### **Afternoon:**
-- **Lunch at Foo-Chow Restaurant** (Rating: 4.5, Cost: $15/person)
-- Explore **Hollywood Sign** (Rating: 4.6, cost: free)
-- Walk along **Hollywood Walk of Fame** (Rating: 4.1, cost: free)
-
-#### **Evening:**
-- **Dinner at Peking Tavern** (Rating: 4.4, Cost: $20/person)
-- Return to hotel and unwind.
-
-### **Day 4: October 22, 2024**
-
-#### **Morning:**
-- Breakfast and check-out from hotel.
-- **Visit California Science Center** (Rating: 4.7, cost: $0/person)
-
-#### **Afternoon:**
-- **Lunch at Jin's Chinese Kitchen** (Rating: 4.6, Cost: $12.80/person)
-- Travel to the airport for flight to San Francisco.
-
-#### **Evening:**
-- **Check in to Hotel Abri, San Francisco** (Rating: 4.0, price: 643.34 USD for 2 adults)
-- **Dinner at Dumpling Home** (Rating: 4.6, Cost: $25/person)
-- Rest and settle into the hotel.
-
-### **Day 5: October 23, 2024**
-
-#### **Morning:**
-- Breakfast at hotel.
-- **Visit Golden Gate Park** (Rating: 4.8, cost: $0/person)
-
-#### **Afternoon:**
-- **Lunch at The Garden Restaurant** (Rating: 4.2, Cost: $25/person)
-- Visit **PIER 39** (Rating: 4.6, cost: free)
-
-#### **Evening:**
-- **Dinner at HK Lounge Bistro** (Rating: 4.7, Cost: $40.5/person)
-- Relax at hotel.
-
-### **Day 6: October 24, 2024**
-
-#### **Morning:**
-- Breakfast at hotel.
-- Visit **Alcatraz Island** (Rating: 4.7, cost: free)
-
-#### **Afternoon:**
-- **Lunch at R & G Lounge** (Rating: 4.3, Cost: $15/person)
-- Walk along **Fisherman's Wharf** (Rating: 4.6, cost: free)
-
-#### **Evening:**
-- **Dinner at Dragon Beaux** (Rating: 4.4, Cost: $6.24/person)
-- Prepare for departure on the next day.
-
-### **Day 7: October 25, 2024**
-#### **Morning:**
-- Breakfast and check-out from hotel.
-- **Flight from San Francisco to Guilin**
-  - Flight: MU586, 12:30-17:10, price:  $918.10/person
-
-#### **Afternoon:**
-- Arrive in Guilin, travel back home.
-
-### **End of Trip**
