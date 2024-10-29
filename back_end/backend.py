@@ -414,8 +414,8 @@ def ask_tripadvisermodel(messages) -> dict:
             output = stdout
             
         except subprocess.TimeoutExpired:
-            kill_proc_tree(process.pid)  # 确保杀死所有子进程
-            process.kill()
+            kill_proc_tree(process.pid)  
+            save_model_output(query, stdout, stderr, "tripadviser")
             return MODEL_TIME_OUT_RESPONSE
         json_str = output.split("=====RETURN=====")[-1].strip()
         json_data = json.loads(json_str)
@@ -466,10 +466,8 @@ def ask_ourmodel(messages) -> dict:
             output = stdout
             
         except subprocess.TimeoutExpired:
-            kill_proc_tree(process.pid)
-            # 在 Linux/Mac 上额外杀死 python 进程
-            if platform.system() != "Windows":
-                subprocess.run("pkill -f 'python.*planner_checker_system.py'", shell=True)
+            kill_proc_tree(process.pid)  
+            save_model_output(query, stdout, stderr, "ourmodel")
             return MODEL_TIME_OUT_RESPONSE
         json_str = output.split("=====RETURN=====")[-1].strip()
         json_data = json.loads(json_str)
