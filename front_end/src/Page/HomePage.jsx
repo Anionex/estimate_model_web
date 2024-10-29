@@ -99,6 +99,8 @@ function HomePage() {
   const [xxmodelloading, setxxmodelLoading] = useState(false);
   const [ourmodelloading, setourmodelLoading] = useState(false);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleInputChange = (e) => {
     setInput(e.target.value);
   };
@@ -106,6 +108,8 @@ function HomePage() {
 
   const handleSendMessage = async () => {
     if (input.trim() === "") return;
+
+    setIsSubmitting(true);
 
     const systemMessage = {"role": "system", "content": "You are a professional itinerary planner. Output the itinerary based on the user's request directly, do not ask for any additional information."};
     const userMessage = {"role": "user", "content": input};
@@ -148,6 +152,7 @@ function HomePage() {
       setourmodelLoading(false);
       setxxmodelLoading(false); 
     } finally {
+      setIsSubmitting(false);
       document.querySelector('input[type="text"]').focus();
     }
   };
@@ -384,11 +389,23 @@ function HomePage() {
       size="lg"
       value={input}
       onChange={handleInputChange}
+      disabled={isSubmitting}
     />
      
-        <Button onClick={handleSendMessage} radius="full">
+        <Button 
+          onClick={handleSendMessage} 
+          radius="full"
+          disabled={isSubmitting}
+          isLoading={isSubmitting}
+        >
         Submit
       </Button>
+      {isSubmitting && (
+        <div className="mt-2 flex justify-center items-center">
+          <CircularProgress size="sm" aria-label="Loading..." />
+          <span className="ml-2">Initializing session...</span>
+        </div>
+      )}
       <div className="note-area">
       <p>Enter your question and wait for the results (you may temporarily leave the page as generating the results could take up to 10 minutes). After reviewing the results, rate the output for each plan.</p>
       </div>
