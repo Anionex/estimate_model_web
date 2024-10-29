@@ -827,13 +827,22 @@ if __name__ == '__main__':
                 from tools.utils import calculate_average_rating_for_raw, calculate_budget_for_raw
                 rating_info = calculate_average_rating_for_raw(planner_results, query)
                 expense_info = calculate_budget_for_raw(planner_results, query)
-                response = {"itinerary":planner_results, 
+                plan_info = {"itinerary":planner_results, 
                     "expense_info": expense_info, 
                     "average_rating": rating_info
                     }
                 
-                # 打印response到plan_info中
-                takedown_plan(response)
+                # Format expense info as markdown table
+                unit = plan_info['expense_info'].get('Unit', '')  # Get unit or empty string if not found
+                expense_rows = []
+                for k, v in plan_info['expense_info'].items():
+                    if k != 'Unit':  # Skip the Unit row as it's handled in the header
+                        expense_rows.append(f"| {k} | {v} |")
+                
+                expense_table = f"| Item | Cost ({unit}) |\n|------|----------------|\n" + "\n".join(expense_rows)
+                plan_info['itinerary'] = plan_info['itinerary'] + '\n\n---Expense Summary---\n\n' + expense_table
+                
+                takedown_plan(plan_info)
                 break
         
         

@@ -125,7 +125,7 @@ if __name__ == '__main__':
     # 确保父目录存在
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     with open(log_path, "w") as f:
-        f.write("") 
+        f.write(f"query: {sys.argv[1]}") 
     # takedown_plan({
     #         "itinerary": "Test!",
     #         "average_rating": {
@@ -147,9 +147,16 @@ if __name__ == '__main__':
     query = sys.argv[1]
     print("query: ", query)
     plan_info = planner_checker_loop(query)
-    # Format expense info as "key: value" pairs
-    expense_str = '\n'.join([f"{k + ('' if k == 'Unit' else ' Cost')}: {v}" for k, v in plan_info['expense_info'].items()])
-    plan_info['itinerary'] = 'Expense Summary:\n' + expense_str + "\n\n" + plan_info['itinerary']
+    # Format expense info as markdown table
+    unit = plan_info['expense_info'].get('Unit', '')  # Get unit or empty string if not found
+    expense_rows = []
+    for k, v in plan_info['expense_info'].items():
+        if k != 'Unit':  # Skip the Unit row as it's handled in the header
+            expense_rows.append(f"| {k} | {v} |")
+    
+    expense_table = f"| Item | Cost ({unit}) |\n|------|----------------|\n" + "\n".join(expense_rows)
+    plan_info['itinerary'] = plan_info['itinerary'] + '\n\n---Expense Summary---\n\n' + expense_table
+    
     print("=====\nFinal Itinerary:\n=====")
     print(str(plan_info))
     
