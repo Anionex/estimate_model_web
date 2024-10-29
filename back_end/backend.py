@@ -3,7 +3,7 @@ import os
 import textwrap
 import time
 from flask import Flask, request, jsonify, Response
-
+from tenacity import retry, stop_after_attempt, wait_fixed
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
@@ -110,6 +110,11 @@ class ModelEstimate(db.Model):
     
     feedback = db.Column(db.String(2000))
     create_time = db.Column(db.DateTime, nullable=True, server_default=func.now())
+    
+    # Add new fields for level of details
+    gpt_level_of_details = db.Column(db.Integer)
+    our_level_of_details = db.Column(db.Integer)
+    trip_level_of_details = db.Column(db.Integer)
 
 
 @app.route('/start_session', methods=['POST'])
@@ -135,6 +140,8 @@ def is_query_available():
     1. requested itinerary's time interval is between current date and 2 months later
     2. requested itinerary's duration is within 20 days
     """
+    if DEBUG:
+        return {}, 200
     data = request.json
     query = data.get('query')
     print("query: ", query)
@@ -359,6 +366,10 @@ def rate():
     xx_route_reasonability_rating = safe_int(xx_model_ratings.get('route_reasonability_rating'))
     xx_representative_rating = safe_int(xx_model_ratings.get('representative_rating'))
 
+    gpt_level_of_details = safe_int(gpt_ratings.get('level_of_details'))
+    our_level_of_details = safe_int(our_model_ratings.get('level_of_details'))
+    xx_level_of_details = safe_int(xx_model_ratings.get('level_of_details'))
+    
     conversation = ModelEstimate.query.get(conversation_id)
     if conversation:
         conversation.gpt_overall_rating = gpt_overall_rating
@@ -373,6 +384,11 @@ def rate():
         conversation.trip_route_rationality_rating = xx_route_reasonability_rating
         conversation.trip_representativeness_rating = xx_representative_rating
 
+        # Add new level of details assignments
+        conversation.gpt_level_of_details = gpt_level_of_details
+        conversation.our_level_of_details = our_level_of_details
+        conversation.trip_level_of_details = xx_level_of_details
+
         conversation.feedback = feedback
         db.session.commit()
         return jsonify({'message': 'Rating saved successfully!'})
@@ -380,9 +396,60 @@ def rate():
         return jsonify({'error': 'Invalid conversation ID!'}), 404
 
 
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
 def ask_gptmodel(messages):
     if DEBUG:
-        return {"source": "gpt", "response": "test"}
+        response = textwrap.dedent("""\
+                                   
+**Day 1: December 14, 2024**  
+Morning:  
+- Depart from Sacramento International Airport (SMF) to Atlanta (ATL).  
+  - Take flight F94144, 12:31-13:59, price: $94.60/person.  
+
+Afternoon:  
+- Check into The St. Regis Atlanta in a luxury suite (confirmed price: $1800 for two nights).
+  - Renowned for opulence and personalized amenities, ensuring exclusive guest experiences suitable for private events.  
+
+Evening:  
+- Dinner at Nikolai's Roof (cost: $105/person, rating: 4.4).
+  - Indulge in a fine dining European experience with breathtaking city views.  
+
+**Day 2: December 15, 2024**  
+Morning:  
+- Engage in a Private Tour with a luxury charter (estimated cost: $300/person).
+  - Discover Atlanta's highlights with personalized insights catered for an exclusive, tailored experience.
+
+Afternoon:  
+- Lunch at Lazy Betty (cost: $125/person, rating: 4.8).  
+  - Experience exquisite creative tasting menus designed with modern culinary techniques.  
+- Enjoy free exploration at Atlanta's Midtown area to discover shops, design, and culture vibrant with local flavor and creativity.
+
+Evening:  
+- Dinner at Bacchanalia for a high-end, modern American cuisine experience (cost: $162.5/person, rating: 4.6).
+  - Enjoy organic seasonal ingredients in a renowned setting celebrated for its exclusivity.  
+- Attend a premium concert or exclusive nightlife event (estimated cost: $300/person).
+  - Engage in Atlanta's elite entertainment for a truly distinguished evening.
+
+**Day 3: December 16, 2024**  
+Morning:  
+- Relax and rejuvenate with luxury spa services at The St. Regis Atlanta (estimated cost: $300/person).
+  - Enjoy a pampering session in the exclusive environment of one of Atlanta's finest luxury hotels.
+
+Afternoon:  
+- Lunch at Ray's In the City (cost: $85/person, rating: 4.6).  
+  - Dine within Atlanta's urban style offering exquisite seafood dishes with premium service.  
+- Visit Martin Luther King, Jr. National Historical Park (cost: free, rating: 4.8).  
+  - Reflect on the legacy of Dr. King with an enriching historical experience.
+
+Evening:  
+- Return to Sacramento.  
+  - Take flight F91116, 23:00-06:04, price: $94.60/person.  
+
+Tips: Ensure advance reservation for all exclusive dining options and confirm detailed arrangements for luxury suite accommodations and private charter services. Enjoy the added luxury of spa treatments, prestigious dining, and elite entertainment selections to complete the bespoke and elevated travel experience.
+                                   """)
+        return {"source": "gpt", "response": response}
     client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
     completion = client.chat.completions.create(
         model="gpt-4o-plus",
@@ -393,6 +460,10 @@ def ask_gptmodel(messages):
 
 
 def ask_tripadvisermodel(messages) -> dict:
+    output = ""
+    stdout, stderr = "", ""
+    if DEBUG:
+        return MODEL_FAIL_TO_COMPLETE_RESPONSE
     try:
         query = messages
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
@@ -436,6 +507,8 @@ def ask_tripadvisermodel(messages) -> dict:
         }
 
 def ask_ourmodel(messages) -> dict:
+    output = ""
+    stdout, stderr = "", ""
     if DEBUG:
         time.sleep(3)
         return MODEL_FAIL_TO_COMPLETE_RESPONSE
@@ -447,7 +520,6 @@ def ask_ourmodel(messages) -> dict:
         
         # 添加超时控制的装饰器
         process = subprocess.Popen(
-            f'conda run -n estimate_web python {python_script} "{query}"' if platform.system() != "Windows" else
             f'conda run -n estimate_web python {python_script} "{query}"',
             shell=True,
             stdout=subprocess.PIPE,

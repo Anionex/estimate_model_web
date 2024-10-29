@@ -36,6 +36,12 @@ const RatingSelect = ({ label, value, onChange }) => (
 const ModelRatings = ({ model, ratings, onRatingChange }) => (
   <>
     <RatingSelect 
+      key={`${model}-level-of-details`}
+      label="Level of Details"
+      value={ratings[model].levelOfDetails}
+      onChange={(value) => onRatingChange(model, 'levelOfDetails', value)}
+    />
+    <RatingSelect 
       key={`${model}-reasonability`}
       label="Reasonability"
       value={ratings[model].routeReasonabilityRating}
@@ -66,22 +72,25 @@ function HomePage() {
   const [feedback, setFeedback] = useState("");
   const [ratings, setRatings] = useState({
     gpt: {
+      levelOfDetails: null,
       overallRating: null,
       routeReasonabilityRating: null,
       representativeRating: null,
     },
     ourmodel: {
+      levelOfDetails: null,
       overallRating: null,
       routeReasonabilityRating: null,
       representativeRating: null,
     },
     xxmodel: {
+      levelOfDetails: null,
       overallRating: null,
       routeReasonabilityRating: null,
       representativeRating: null,
     },
     conversation_id: null,
-    feedback:"",
+    feedback: "",
   });
 
 
@@ -262,7 +271,7 @@ function HomePage() {
     };
 
     const allModels = ['gpt', 'ourmodel', 'xxmodel'];
-    const allRatingTypes = ['overallRating', 'routeReasonabilityRating', 'representativeRating'];
+    const allRatingTypes = ['overallRating', 'routeReasonabilityRating', 'representativeRating', 'levelOfDetails'];
 
     const hasEmptyRatings = allModels.some(model => 
       allRatingTypes.some(type => {
@@ -292,16 +301,19 @@ function HomePage() {
       const ratingData = {
         conversation_id: conversationId,
         gpt: {
+          level_of_details: ratings.gpt.levelOfDetails,
           overall_rating: ratings.gpt.overallRating,
           route_reasonability_rating: ratings.gpt.routeReasonabilityRating,
           representative_rating: ratings.gpt.representativeRating
         },
         ourmodel: {
+          level_of_details: ratings.ourmodel.levelOfDetails,
           overall_rating: ratings.ourmodel.overallRating,
           route_reasonability_rating: ratings.ourmodel.routeReasonabilityRating,
           representative_rating: ratings.ourmodel.representativeRating
         },
         xxmodel: {
+          level_of_details: ratings.xxmodel.levelOfDetails,
           overall_rating: ratings.xxmodel.overallRating,
           route_reasonability_rating: ratings.xxmodel.routeReasonabilityRating,
           representative_rating: ratings.xxmodel.representativeRating
