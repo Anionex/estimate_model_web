@@ -1,7 +1,9 @@
 from datetime import datetime
 import os
+import textwrap
 import time
 from flask import Flask, request, jsonify, Response
+
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
@@ -17,8 +19,10 @@ from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=10)
 from flask_migrate import Migrate
 import hashlib  # 添加到文件顶部的导入部分
-
-
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, ".."))
+from utils.jsonify_chat_model import get_json_response
 
 MODEL_MAX_PROCESS_TIME = 600
 MODEL_FAIL_TO_COMPLETE_RESPONSE = {
@@ -133,27 +137,37 @@ def is_query_available():
     """
     data = request.json
     query = data.get('query')
+    print("query: ", query)
     try:
         parsed_query = parse_query(query)
     except Exception as e:
         return jsonify({'error': f"Error parsing query: {str(e)}"}), 500
     print("parsed_query: ", parsed_query)
-    # 检查是否是自相矛盾的请求
-    # if parsed_query['is_the_request_date_self_contradictory'] == "True":
-    #     return jsonify({'error': 'The request is self-contradictory.Please revise your request.'}), 400
-    
     # 检查parsed_query是否满足条件
     current_date = datetime.now().date()
     two_months_later = current_date + timedelta(days=60)
+    departure_date = "2024-01-01"
+    return_date = "2024-01-01"
+    try:
+        departure_date = datetime.strptime(parsed_query.get('departure_date', '2024-01-01'), "%Y-%m-%d").date()
+        return_date = datetime.strptime(parsed_query.get('return_date', '2024-01-01'), "%Y-%m-%d").date()
+    except Exception as e:
+        pass
     
-    departure_date = datetime.strptime(parsed_query['departure_date'], "%Y-%m-%d").date()
-    return_date = datetime.strptime(parsed_query['return_date'], "%Y-%m-%d").date()
+    # 检查条件1：用户请求的是行程规划请求
+    if not parsed_query.get('is_a_itinerary_planning_request', False):
+        return jsonify({'error': 'The query is not an itinerary planning request.'}), 400
     
-    # 检查条件1: 行程时间在当前日期和两个月后之间
+    # 检查条件2: 行程时间在当前日期和两个月后之间
     if departure_date < current_date or return_date > two_months_later:
         return jsonify({'error': f'The itinerary should be between {current_date.strftime("%m/%d/%Y")} and {two_months_later.strftime("%m/%d/%Y")}.'}), 400
-    # 检查条件2: 行程持续时间不超过20天
-    trip_duration = (return_date - departure_date).days
+    
+    # 检查条件3: 出发日期和返回日期是否合理
+    if departure_date > return_date:
+        return jsonify({'error': 'The departure date should be before the return date.'}), 400
+    
+    # 检查条件4: 行程持续时间不超过20天
+    trip_duration = parsed_query['duration']
     if trip_duration > 20:
         return jsonify({'error': 'The itinerary should be within 20 days.'}), 400
     
@@ -162,38 +176,20 @@ def is_query_available():
     
 
 def parse_query(query) -> dict:
-    """
-    Parse the query to extract the departure date and destination city.
-    """
-    parser_prompt = """parse the given itinerary planning request into json format as follows:
-{{
-    "departure_date": "YYYY-MM-DD", 
-    "return_date": "YYYY-MM-DD",
-    "is_the_request_date_self_contradictory": "True" or "False"
-}}    
-departure at {current_date} if not specified. DO NOT output output anything except the json.
-When the user specifies both duration and dates, if the period between departure and return dates doesn't match the specified duration, set is_the_request_date_self_contradictory to True.
-""".format(current_date=datetime.now().date())
-    # "destination": "city name",(default: Kennesaw, GA)
-    # "budget": "number with unit"(default: unlimited)
-    client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
-    while True:
-        max_retries = 3
-        retries = 0
-        while retries < max_retries:
-            try:
-                completion = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "system", "content": parser_prompt},
-                              {"role": "user", "content": query}],
-                )
-                parsed_query = completion.choices[0].message.content.strip().strip("```json").strip("```").strip()
-                return json.loads(parsed_query)
-            except Exception as e:
-                retries += 1
-                if retries == max_retries:
-                    raise
-                time.sleep(1)
+    output_format = textwrap.dedent("""
+    {
+        "is_a_itinerary_planning_request": bool,
+        "the_"
+        "departure_date": string,  // date in "YYYY-MM-DD" or "Not specified"
+        "return_date": string,  // date in "YYYY-MM-DD" or "Not specified"
+        "duration": number  // number of days
+    }    
+    """)
+    return get_json_response(system_prompt=f"Your task is to parse the given itinerary planning request.current year: {datetime.now().year}.",
+                             user_prompt=query,
+                             output_format=output_format)
+
+
 
 @app.route('/ask_gpt', methods=['POST'])
 def ask_gpt():

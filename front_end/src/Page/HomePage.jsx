@@ -133,7 +133,7 @@ function HomePage() {
 
     } catch (error) {
       console.error("Error:", error);
-      alert(error.response?.data?.error || "发生错误,请稍后再试");
+      alert(error.response?.data?.error || "Something wrong, please retry");
       setgptLoading(false);
       setourmodelLoading(false);
       setxxmodelLoading(false); 
