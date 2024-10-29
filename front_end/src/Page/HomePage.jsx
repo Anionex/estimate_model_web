@@ -6,6 +6,7 @@ import {Card, CardHeader, CardBody, Button,Textarea,CardFooter, Divider, Link, I
 import {Select, SelectSection, SelectItem} from "@nextui-org/select";
 import {CircularProgress} from "@nextui-org/react";
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'
 
 // Define rating options array
 const ratingOptions = [...Array(11)].map((_, i) => ({
@@ -395,7 +396,7 @@ function HomePage() {
           )}
           {gptmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             </div>
           ))}
           {gptloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -442,7 +443,7 @@ function HomePage() {
           )}
           {ourmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             </div>
           ))}
           {ourmodelloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -487,7 +488,7 @@ function HomePage() {
           )}
           {xxmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             </div>
           ))}
           {xxmodelloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
