@@ -236,6 +236,14 @@
   white-space: pre-wrap; /* 保持换行和空格 */
 }
 
+.message .myMdStyle ul,
+.message .myMdStyle li {
+  margin-top: -10px !important;
+  margin-bottom: -10px !important;
+  padding-top: -10px !important;
+  padding-bottom: -10px !important;
+}
+
 
 
 

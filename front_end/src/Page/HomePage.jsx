@@ -396,7 +396,7 @@ function HomePage() {
           )}
           {gptmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              <ReactMarkdown className="myMdStyle" remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             </div>
           ))}
           {gptloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -443,7 +443,7 @@ function HomePage() {
           )}
           {ourmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              <ReactMarkdown className="myMdStyle" remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             </div>
           ))}
           {ourmodelloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
@@ -488,7 +488,7 @@ function HomePage() {
           )}
           {xxmodelmessages.map((message, index) => (
             <div key={index} className={`message ${message.role}`}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              <ReactMarkdown className="myMdStyle" remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             </div>
           ))}
           {xxmodelloading && <p>Loading... <CircularProgress aria-label="Loading..." /></p>}
