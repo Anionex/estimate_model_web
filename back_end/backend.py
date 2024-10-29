@@ -509,9 +509,9 @@ def ask_tripadvisermodel(messages) -> dict:
 def ask_ourmodel(messages) -> dict:
     output = ""
     stdout, stderr = "", ""
-    if DEBUG:
-        time.sleep(3)
-        return MODEL_FAIL_TO_COMPLETE_RESPONSE
+    # if DEBUG:
+    #     time.sleep(3)
+    #     return MODEL_FAIL_TO_COMPLETE_RESPONSE #tmp
     try:
         query = next(item["content"] for item in messages if item["role"] == "user")   
         print("input_data: ", query)

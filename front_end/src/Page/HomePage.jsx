@@ -37,7 +37,7 @@ const ModelRatings = ({ model, ratings, onRatingChange }) => (
   <>
     <RatingSelect 
       key={`${model}-level-of-details`}
-      label="Level of Details"
+      label="Level of details"
       value={ratings[model].levelOfDetails}
       onChange={(value) => onRatingChange(model, 'levelOfDetails', value)}
     />
