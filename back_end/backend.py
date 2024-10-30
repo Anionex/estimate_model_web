@@ -3,7 +3,7 @@ import os
 import textwrap
 import time
 from flask import Flask, request, jsonify, Response
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
@@ -399,58 +399,10 @@ def rate():
 
 
 
-
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
+@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1.5, min=3, max=120))
 def ask_gptmodel(messages):
     if DEBUG:
-        response = textwrap.dedent("""\
-                                   
-**Day 1: December 14, 2024**  
-Morning:  
-- Depart from Sacramento International Airport (SMF) to Atlanta (ATL).  
-  - Take flight F94144, 12:31-13:59, price: $94.60/person.  
-
-Afternoon:  
-- Check into The St. Regis Atlanta in a luxury suite (confirmed price: $1800 for two nights).
-  - Renowned for opulence and personalized amenities, ensuring exclusive guest experiences suitable for private events.  
-
-Evening:  
-- Dinner at Nikolai's Roof (cost: $105/person, rating: 4.4).
-  - Indulge in a fine dining European experience with breathtaking city views.  
-
-**Day 2: December 15, 2024**  
-Morning:  
-- Engage in a Private Tour with a luxury charter (estimated cost: $300/person).
-  - Discover Atlanta's highlights with personalized insights catered for an exclusive, tailored experience.
-
-Afternoon:  
-- Lunch at Lazy Betty (cost: $125/person, rating: 4.8).  
-  - Experience exquisite creative tasting menus designed with modern culinary techniques.  
-- Enjoy free exploration at Atlanta's Midtown area to discover shops, design, and culture vibrant with local flavor and creativity.
-
-Evening:  
-- Dinner at Bacchanalia for a high-end, modern American cuisine experience (cost: $162.5/person, rating: 4.6).
-  - Enjoy organic seasonal ingredients in a renowned setting celebrated for its exclusivity.  
-- Attend a premium concert or exclusive nightlife event (estimated cost: $300/person).
-  - Engage in Atlanta's elite entertainment for a truly distinguished evening.
-
-**Day 3: December 16, 2024**  
-Morning:  
-- Relax and rejuvenate with luxury spa services at The St. Regis Atlanta (estimated cost: $300/person).
-  - Enjoy a pampering session in the exclusive environment of one of Atlanta's finest luxury hotels.
-
-Afternoon:  
-- Lunch at Ray's In the City (cost: $85/person, rating: 4.6).  
-  - Dine within Atlanta's urban style offering exquisite seafood dishes with premium service.  
-- Visit Martin Luther King, Jr. National Historical Park (cost: free, rating: 4.8).  
-  - Reflect on the legacy of Dr. King with an enriching historical experience.
-
-Evening:  
-- Return to Sacramento.  
-  - Take flight F91116, 23:00-06:04, price: $94.60/person.  
-
-Tips: Ensure advance reservation for all exclusive dining options and confirm detailed arrangements for luxury suite accommodations and private charter services. Enjoy the added luxury of spa treatments, prestigious dining, and elite entertainment selections to complete the bespoke and elevated travel experience.
-                                   """)
+        response = "test"
         return {"source": "gpt", "response": response}
     client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
     completion = client.chat.completions.create(
