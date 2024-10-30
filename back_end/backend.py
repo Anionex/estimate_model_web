@@ -142,45 +142,45 @@ def is_query_available():
     """
     if DEBUG:
         return {}, 200
+        
     data = request.json
     query = data.get('query')
     print("query: ", query)
+    
     try:
         parsed_query = parse_query(query)
+        if not parsed_query.get('is_a_itinerary_planning_request'):
+            return jsonify({'error': 'Not an itinerary planning request'}), 400
+            
+        # Get dates from parsed query
+        departure_str = parsed_query.get('departure_date')
+        return_str = parsed_query.get('return_date')
+        duration = parsed_query.get('duration')
+        
+        # Check duration constraint
+        if duration and duration > 20:
+            return jsonify({'error': 'Trip duration cannot exceed 20 days'}), 400
+            
+        # Check date constraints if dates are specified
+        if departure_str != "Not specified" and return_str != "Not specified":
+            departure_date = datetime.strptime(departure_str, "%Y-%m-%d").date()
+            return_date = datetime.strptime(return_str, "%Y-%m-%d").date()
+            
+            current_date = datetime.now().date()
+            two_months_later = current_date + timedelta(days=60)
+            
+            if departure_date < current_date:
+                return jsonify({'error': 'Departure date cannot be in the past'}), 400
+                
+            if departure_date > two_months_later:
+                return jsonify({'error': 'Departure date cannot be more than 2 months in the future'}), 400
+                
+            if return_date < departure_date:
+                return jsonify({'error': 'Return date must be after departure date'}), 400
+                
     except Exception as e:
         return jsonify({'error': f"Error parsing query: {str(e)}"}), 500
-    print("parsed_query: ", parsed_query)
-    # 检查parsed_query是否满足条件
-    current_date = datetime.now().date()
-    two_months_later = current_date + timedelta(days=60)
-    departure_date = datetime.strptime("2024-01-01", "%Y-%m-%d").date()
-    return_date = datetime.strptime("2024-01-01", "%Y-%m-%d").date()
-    try:
-        departure_date = datetime.strptime(parsed_query.get('departure_date', '2024-01-01'), "%Y-%m-%d").date()
-        return_date = datetime.strptime(parsed_query.get('return_date', '2024-01-01'), "%Y-%m-%d").date()
-    except Exception as e:
-        print("error:", str(e))
-        pass
-    try:
-        # 检查条件1：用户请求的是行程规划请求
-        if not parsed_query.get('is_a_itinerary_planning_request', False):
-            return jsonify({'error': 'The query is not an itinerary planning request.'}), 400
         
-        # 检查条件2: 行程时间在当前日期和两个月后之间
-        if departure_date < current_date or return_date > two_months_later:
-            return jsonify({'error': f'The itinerary should be between {current_date.strftime("%m/%d/%Y")} and {two_months_later.strftime("%m/%d/%Y")}.'}), 400
-        
-        # 检查条件3: 出发日期和返回日期是否合理
-        if departure_date > return_date:
-            return jsonify({'error': 'The departure date should be before the return date.'}), 400
-        
-        # 检查条件4: 行程持续时间不超过20天
-        trip_duration = parsed_query['duration']
-        if trip_duration > 20:
-            return jsonify({'error': 'The itinerary should be within 20 days.'}), 400
-    except Exception as e:
-        print("error:", str(e))
-        pass
     return jsonify({'message': 'Query is available!'}), 200
 
     
@@ -189,7 +189,6 @@ def parse_query(query) -> dict:
     output_format = textwrap.dedent("""
     {
         "is_a_itinerary_planning_request": bool,
-        "the_"
         "departure_date": string,  // date in "YYYY-MM-DD" or "Not specified"
         "return_date": string,  // date in "YYYY-MM-DD" or "Not specified"
         "duration": number  // number of days
