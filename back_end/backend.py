@@ -153,31 +153,32 @@ def is_query_available():
     # 检查parsed_query是否满足条件
     current_date = datetime.now().date()
     two_months_later = current_date + timedelta(days=60)
-    departure_date = "2024-01-01"
-    return_date = "2024-01-01"
+    departure_date = datetime.strptime("2024-01-01", "%Y-%m-%d").date()
+    return_date = datetime.strptime("2024-01-01", "%Y-%m-%d").date()
     try:
         departure_date = datetime.strptime(parsed_query.get('departure_date', '2024-01-01'), "%Y-%m-%d").date()
         return_date = datetime.strptime(parsed_query.get('return_date', '2024-01-01'), "%Y-%m-%d").date()
     except Exception as e:
         pass
-    
-    # 检查条件1：用户请求的是行程规划请求
-    if not parsed_query.get('is_a_itinerary_planning_request', False):
-        return jsonify({'error': 'The query is not an itinerary planning request.'}), 400
-    
-    # 检查条件2: 行程时间在当前日期和两个月后之间
-    if departure_date < current_date or return_date > two_months_later:
-        return jsonify({'error': f'The itinerary should be between {current_date.strftime("%m/%d/%Y")} and {two_months_later.strftime("%m/%d/%Y")}.'}), 400
-    
-    # 检查条件3: 出发日期和返回日期是否合理
-    if departure_date > return_date:
-        return jsonify({'error': 'The departure date should be before the return date.'}), 400
-    
-    # 检查条件4: 行程持续时间不超过20天
-    trip_duration = parsed_query['duration']
-    if trip_duration > 20:
-        return jsonify({'error': 'The itinerary should be within 20 days.'}), 400
-    
+    try:
+        # 检查条件1：用户请求的是行程规划请求
+        if not parsed_query.get('is_a_itinerary_planning_request', False):
+            return jsonify({'error': 'The query is not an itinerary planning request.'}), 400
+        
+        # 检查条件2: 行程时间在当前日期和两个月后之间
+        if departure_date < current_date or return_date > two_months_later:
+            return jsonify({'error': f'The itinerary should be between {current_date.strftime("%m/%d/%Y")} and {two_months_later.strftime("%m/%d/%Y")}.'}), 400
+        
+        # 检查条件3: 出发日期和返回日期是否合理
+        if departure_date > return_date:
+            return jsonify({'error': 'The departure date should be before the return date.'}), 400
+        
+        # 检查条件4: 行程持续时间不超过20天
+        trip_duration = parsed_query['duration']
+        if trip_duration > 20:
+            return jsonify({'error': 'The itinerary should be within 20 days.'}), 400
+    except:
+        pass
     return jsonify({'message': 'Query is available!'}), 200
 
     
