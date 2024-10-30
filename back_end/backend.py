@@ -159,6 +159,7 @@ def is_query_available():
         departure_date = datetime.strptime(parsed_query.get('departure_date', '2024-01-01'), "%Y-%m-%d").date()
         return_date = datetime.strptime(parsed_query.get('return_date', '2024-01-01'), "%Y-%m-%d").date()
     except Exception as e:
+        print("error:", str(e))
         pass
     try:
         # 检查条件1：用户请求的是行程规划请求
@@ -177,7 +178,8 @@ def is_query_available():
         trip_duration = parsed_query['duration']
         if trip_duration > 20:
             return jsonify({'error': 'The itinerary should be within 20 days.'}), 400
-    except:
+    except Exception as e:
+        print("error:", str(e))
         pass
     return jsonify({'message': 'Query is available!'}), 200
 
