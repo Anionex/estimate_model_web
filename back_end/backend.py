@@ -426,12 +426,12 @@ def ask_tripadvisermodel(messages) -> dict:
         query = messages
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
         process = subprocess.Popen(
-            f'conda run -n estimate_web python {python_script} "{query}"',
-            shell=True,
+            ['conda', 'run', '-n', 'estimate_web', 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            env=env
+            env=env,
+            shell=False  # 设置为False以避免shell解释
         )
         
         try:
@@ -476,14 +476,14 @@ def ask_ourmodel(messages) -> dict:
         
         python_script = "../ItineraryAgent-master/planner_checker_system.py"
         
-        # 添加超时控制的装饰器
+        # 使用列表形式传递命令
         process = subprocess.Popen(
-            f'conda run -n estimate_web python {python_script} "{query}"',
-            shell=True,
+            ['conda', 'run', '-n', 'estimate_web', 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            env=env
+            env=env,
+            shell=False  # 设置为False以避免shell解释
         )
         
         try:
