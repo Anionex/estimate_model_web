@@ -24,7 +24,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, ".."))
 from utils.jsonify_chat_model import get_json_response
 
-MODEL_MAX_PROCESS_TIME = 600
+MODEL_MAX_PROCESS_TIME = 1800
 MODEL_FAIL_TO_COMPLETE_RESPONSE = {
     "itinerary": "Model failed to complete the task.",
     "average_rating": {
