@@ -169,6 +169,10 @@ def is_query_available():
             current_date = datetime.now().date()
             two_months_later = current_date + timedelta(days=60)
             
+            # check if the duration is consistent with the interval between departure and return dates
+            if (return_date - departure_date + timedelta(days=1)).days != duration:
+                return jsonify({'error': 'Duration does not match the interval between departure and return dates'}), 400
+            
             if departure_date < current_date:
                 return jsonify({'error': 'Departure date cannot be in the past'}), 400
                 
