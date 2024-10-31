@@ -55,7 +55,8 @@ Plan a new travel itinerary based on the tourism-related information gathered fr
 # ---审核智能体---
 PLAN_CHECKER_PROMPT_BUDGET = """# Budget Analyst
 
-You are a budget analyst, and your task is to extract the calculation formula for each expense item from the itinerary provided by the user.
+You are a budget analyst, and your task is to extract the calculation formula for each expense item from the itinerary provided by the user.The user's itinerary request is:
+"{query}"
 
 ## Workflow
 Let’s think step by step:
@@ -107,14 +108,14 @@ Dining: 50 * 2 + (10 + 50 + 50) * 2 + (17 + 24) * 2
 
 JUDGE_BUDGET_PROMPT = """Below are the calculation results for various expenses for the itinerary: 
 {expense_info}
-Here are the user's requirements:
+Here is the user's itinerary request:
 "{query}"
 
-Please determine whether the expenses meet the user's requirements.We consider the expenses meet the required budgets if (1)the expense is not greater than the required budget. (2)the total expense is greater than eighty percent of the required total budget. Your output should be in json format as follows:
+Please determine whether the expenses meet the user's requirements.We consider the expenses meet the required budgets if (1)the expense is not greater than the required budget. (2)the total expense is greater than eighty percent of the required total budget.However, you should judge whether the budget requirement exists first. Your output should be in json format as follows:
 {{
-    "if_the_user_provides_budget": {{
+    "budget_requirement_exists": {{
       "observations": "your observations",
-      "meets_criteria": true or false(if it is false, stop here)
+      "meets_criteria": true or false
     }},
     "expense_not_greater_than_required_budget": {{
       "observations": "your observations",
@@ -156,7 +157,7 @@ ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:
 
 Please analyze step-by-step based on the dimensions in the 'Review Criteria'.Your output should be in json format as follows:
 {{
-  "Itinerary_Review": [
+  "itinerary_review": [
     {{
       "criteria": "Is an itinerary",
       "observations": "your observations",

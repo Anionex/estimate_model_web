@@ -147,7 +147,7 @@ class PlanChecker:
             response = response.strip().strip('```json').strip('```').strip()
             response = json.loads(response)
         
-            if not ((response['if_the_user_provides_budget']['meets_criteria'] == False) or (response['total_expense_greater_than_eighty_percent_of_budget']['meets_criteria'] and 
+            if not ((response['budget_requirement_exists']['meets_criteria'] == False) or (response['total_expense_greater_than_eighty_percent_of_budget']['meets_criteria'] and 
                    response['expense_not_greater_than_required_budget']['meets_criteria'])):
                 print("start budget advice")
                 response, history = self.model.chat(prompt=BUDGET_ADVICE_PROMPT,
@@ -172,12 +172,12 @@ class PlanChecker:
         response = response.strip().strip('```json').strip('```').strip()
         response = json.loads(response)
         
-        # 修改判断逻辑，检查 Itinerary_Review 中每个条目的 meets_criteria
-        if not all(item["meets_criteria"] for item in response["Itinerary_Review"]): 
+        # 修改判断逻辑，检查 itinerary_review 中每个条目的 meets_criteria
+        if not all(item["meets_criteria"] for item in response["itinerary_review"]): 
             # 输出不满足的标准
             failed_criteria = [
                 item["criteria"] 
-                for item in response["Itinerary_Review"] 
+                for item in response["itinerary_review"] 
                 if not item["meets_criteria"]
             ]
             for criterion in failed_criteria:

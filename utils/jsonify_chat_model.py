@@ -5,7 +5,7 @@ dotenv.load_dotenv()
 import textwrap
 JSON_RESPONSE_PROMPT_TEMPLATE = """\
 {system_prompt}
-Output in the following json template:
+Strictly output in the following json format:
 {output_format}
 DO NOT output anything else except the json.
 """
@@ -26,6 +26,14 @@ def get_openai_response(system_prompt: str, user_prompt: str, output_format: dic
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
 def get_json_response(system_prompt: str, user_prompt: str, output_format: dict) -> dict:
+    """
+    Get a json response from the chat model.
+    TEMPLATE is as follows:
+    {system_prompt}
+    Strictly output in the following json format:
+    {output_format}
+    DO NOT output anything else except the json.
+    """
     try:
         response = get_openai_response(system_prompt, user_prompt, output_format)
         return json.loads(response.choices[0].message.content.strip().strip('```json').strip('````').strip())

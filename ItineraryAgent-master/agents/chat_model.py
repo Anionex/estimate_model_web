@@ -1,13 +1,18 @@
+import traceback
 from typing import Dict, List, Optional, Tuple, Union
+import dotenv
 import os
 import time
 from tenacity import retry, stop_after_attempt, wait_exponential
 from openai import OpenAI
 from openai import APIError, RateLimitError
 
+dotenv.load_dotenv()
 
-
-from langfuse.openai import OpenAI
+if os.getenv('LANGFUSE_SECRET_KEY'):
+    from langfuse.openai import OpenAI
+else:
+    from openai import OpenAI
 class OpenAIChat():
     def __init__(self, path: str = '', **kwargs) -> None:
         self.load_model(**kwargs)
@@ -60,6 +65,8 @@ class OpenAIChat():
             return full_response, history
         except Exception as e:
             print(f"error: {str(e)}")
+            # 打印traceback
+            traceback.print_exc()
             return f"error: {str(e)}", history
     
     
