@@ -825,8 +825,21 @@ if __name__ == '__main__':
                 
                 ## 进行rating和budget的计算
                 from tools.utils import calculate_average_rating_for_raw, calculate_budget_for_raw
-                rating_info = calculate_average_rating_for_raw(planner_results, query)
-                expense_info = calculate_budget_for_raw(planner_results, query)
+                try:
+                    rating_info = calculate_average_rating_for_raw(planner_results, query)
+                except Exception as e:
+                    print(f"Failed to calculate rating info: {e}")
+                    rating_info = {
+                        "Attractions": 0,
+                        "Restaurants": 0, 
+                        "Accommodations": 0,
+                        "Overall": 0
+                    }
+                try:
+                    expense_info = calculate_budget_for_raw(planner_results, query)
+                except Exception as e:
+                    print(f"Failed to calculate expense info: {e}")
+                    expense_info = {"Total": 0, "Unit": "USD"}
                 plan_info = {"itinerary":planner_results, 
                     "expense_info": expense_info, 
                     "average_rating": rating_info
