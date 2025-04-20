@@ -174,6 +174,9 @@ if __name__ == '__main__':
     with open("logs/plan_info" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json", "w", encoding="utf-8") as file:
         json.dump(plan_info, file, ensure_ascii=False)
 
+    ## 打印行程到txt文件
+    with open("logs/itinerary" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".txt", "w", encoding="utf-8") as file:
+        file.write(plan_info['itinerary'])
     
     end_time = time.time()
     print(f"Runtime: {end_time - start_time:.2f} seconds")
