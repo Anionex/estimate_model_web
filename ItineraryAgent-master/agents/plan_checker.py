@@ -133,15 +133,16 @@ class PlanChecker:
     def _budget_check(self, plan, query, extra_requirements):
         sys_prompt = self.build_system_input(query, extra_requirements, check_stage='budget')
         history = []
-        response, history = self.model.chat(prompt=f"Here is the user's requirements:\n{query}\nHere is the itinerary:\n{plan}", history=history, meta_instruction=sys_prompt)
+        response, _ = self.model.chat(prompt=f"Here is the user's requirements:\n{query}\nHere is the itinerary:\n{plan}", history=history, meta_instruction=sys_prompt)
         
         self.expense_info = calculate_budget(response)
         self.model.kwargs['model'] = 'gpt-4o'
         response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(
+            plan=plan,
             expense_info="\n"+str(self.expense_info),
             query=query),
-                                   history=history,
-                                   meta_instruction="You are a Budget Analyst.")
+                                   history=[],
+                                   meta_instruction="")
         try:
             print("budget check result:", response)
             response = response.strip().strip('```json').strip('```').strip()

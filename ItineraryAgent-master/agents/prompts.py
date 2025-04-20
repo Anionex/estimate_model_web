@@ -47,6 +47,8 @@ tips:...
 {query}
 
 Let's begin!
+
+<Analysis:To create a comprehensive travel plan, I should first determine some basic information for this trip, including budget, number of days, cities and their visiting time, etc.If not provided, I'll set reasonably based on context.Then I'll colect the transpotation information in order to connect the cities.>
 """
 
 PLANNER_PROMPT_WITH_REASONING_TRACE = """#Role
@@ -83,20 +85,20 @@ Output the budget analysis strictly according to the following template:
 
 ### Daily Expense Analysis
 Day 1:
-Transportation: On the first day, there is a train journey, each ticket costs 400 CNY, for 2 people, so the expense is 400 * 2
-Attractions: No attractions on the first day, so the formula is 0
-Accommodation: Stayed in a double room hotel for 379.34 CNY per night, so the expense is 379.34
-Dining: No breakfast or lunch, dinner costs 50 CNY per person, so the expense is 50 * 2
+Transportation: On the first day, there is a train journey, each ticket costs 400 USD, for 2 people, so the expense is 400 * 2
+Attractions: No attractions on the first day, so the expense is 0
+Accommodation: Stayed in a double room hotel for 379.34 USD per night, so the expense is 379.34
+Dining: No breakfast or lunch, dinner costs 50 USD per person, so the expense is 50 * 2
 Day 2:
 Transportation: No transportation arranged on the second day, so the formula is 0
-Attractions: Planned to visit two attractions, tickets cost 15 CNY and 20 CNY per person, for 2 people, so the expense is (15 + 20) * 2
+Attractions: Planned to visit two attractions, tickets cost 15 USD and 20 USD per person, for 2 people, so the expense is (15 + 20) * 2
 Accommodation: No specific hotel mentioned, assume the same as the previous day, so the expense is 379.34
-Dining: Breakfast, lunch, and dinner cost 10 CNY, 50 CNY, and 50 CNY per person respectively, so the expense is (10 + 50 + 50) * 2
+Dining: Breakfast, lunch, and dinner cost 10 USD, 50 USD, and 50 USD per person respectively, so the expense is (10 + 50 + 50) * 2
 Day 3:
-Transportation: Return train journey, each ticket costs 372 CNY, for 2 people, so the expense is 372 * 2
-Attractions: Planned to visit two attractions, tickets cost 18 CNY and 120 CNY per person, for 2 people, so the expense is (18 + 120) * 2
+Transportation: Return train journey, each ticket costs 372 USD, for 2 people, so the expense is 372 * 2
+Attractions: Planned to visit two attractions, tickets cost 18 USD and 120 USD per person, for 2 people, so the expense is (18 + 120) * 2
 Accommodation: Day 3 is the return journey, so no accommodation expense, formula is 0
-Dining: No dinner arranged, breakfast and lunch cost 17 CNY and 24 CNY per person respectively, so the expense is (17 + 24) * 2
+Dining: No dinner arranged, breakfast and lunch cost 17 USD and 24 USD per person respectively, so the expense is (17 + 24) * 2
 =====Summary=====
 Unit: USD
 Transportation: 400 * 2 + 372 * 2
@@ -106,8 +108,15 @@ Dining: 50 * 2 + (10 + 50 + 50) * 2 + (17 + 24) * 2
 ```
 """
 
-JUDGE_BUDGET_PROMPT = """Below are the calculation results for various expenses for the itinerary: 
+JUDGE_BUDGET_PROMPT = """\
+Given the itinerary and the real expense information, please determine whether the expenses meet the user's requirements.
+
+Here is the itinerary:
+"{plan}"
+
+Here is the real expense information of the itinerary:
 {expense_info}
+
 Here is the user's itinerary request:
 "{query}"
 
@@ -146,7 +155,7 @@ You are a professional itinerary reviewer, responsible for reviewing itineraries
 - Ensure outbound and return transportation is arranged with cost and flight number.
 - If the input is not an itinerary, output "Rejected" anyway.
 
-## User Requirements
+The user's request is as follows:
 "{query}"
 current date: {current_date}
 
