@@ -2,3 +2,13 @@
 /venv/*
 .env
 logs1/
+cache_directory/
+misc/
+*.pyc
+__pycache__/
+*.db
+*.log
+*.txt
+logs/
+migrations/
+package-lock.json
