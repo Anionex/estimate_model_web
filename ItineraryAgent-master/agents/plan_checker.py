@@ -133,8 +133,13 @@ class PlanChecker:
     def _budget_check(self, plan, query, extra_requirements):
         sys_prompt = self.build_system_input(query, extra_requirements, check_stage='budget')
         history = []
-        response, _ = self.model.chat(prompt=f"Here is the user's requirements:\n{query}\nHere is the itinerary:\n{plan}", history=history, meta_instruction=sys_prompt)
+        response, history = self.model.chat(prompt=f"Here is the user's requirements:\n{query}\nHere is the itinerary:\n{plan}", history=history, meta_instruction=sys_prompt)
         
+        # 反思自己生成的算式，看看哪里有问题，如果有问题重新生成；如果没有问题，则进到下一步计算实际的数额
+        response, history = self.model.chat(prompt=f"Step by step, reflect and check the generated formulas. If there are any issues, point out where they are and output the corrected formulas at the end. Remember to use =====Summary===== as a separator. If there are no issues, you still need to output the previous summary section again at the end", history=history, meta_instruction=sys_prompt)
+        
+        # 之前上下文不用了
+        history = []
         self.expense_info = calculate_budget(response)
         self.model.kwargs['model'] = 'gpt-4o'
         response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(

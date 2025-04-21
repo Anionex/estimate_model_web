@@ -26,8 +26,10 @@ Please collect transportation details about departure and return journey.Do not 
 ## Itinerary Arrangement Rules
 1. Breakfast is usually eaten at the hotel, while lunch and dinner are chosen at local specialty restaurants.
 2. Use "Morning", "Afternoon", "Evening" to arrange time for each day.
-3. Provide rating and cost information for restaurants, attractions, hotels, and transportation. Example:
+3. YOU MUST Provide rating and cost information for restaurants, attractions, hotels, and transportation. Example:
 Kushiro(cost: $25/person, rating:4.9); Visit the golden gate bridge(cost: free, rating:4.8); Take flight F92427(22:39-00:19, price: $244.63/person) back to San Francisco.
+  - for accommodation use $/person/night for unit
+  - for transportation, attractions, restaurants, use $/person for unit
 4. Do not fabricate information.
 Recommend you to format the itinerary like this:
 <Itinerary:
@@ -74,6 +76,7 @@ Let’s think step by step:
 - the summary part only consists of 4 expenses: transportation, attractions, accommodation, and dining.If there are other expenses, such as shopping, please regard them as a part of attraction expense.
 - Do not use any markdown format in the output.
 - DO NOT FORGET TO ADD FIELD 'UNIT' IN THE SUMMARY PART.
+- When writing numbers, do not use commas as thousand separators.
 
 ## Output Example
 Output the budget analysis strictly according to the following template:
@@ -112,13 +115,19 @@ JUDGE_BUDGET_PROMPT = """\
 Given the itinerary and the real expense information, please determine whether the expenses meet the user's requirements.
 
 Here is the itinerary:
-"{plan}"
+<Itinerary>
+{plan}
+</Itinerary>
 
 Here is the real expense information of the itinerary:
+<Expense Info>
 {expense_info}
+</Expense Info>
 
 Here is the user's itinerary request:
+<User's Request>
 "{query}"
+</User's Request>
 
 Please determine whether the expenses meet the user's requirements.We consider the expenses meet the required budgets if (1)the expense is not greater than the required budget. (2)the total expense is greater than eighty percent of the required total budget.However, you should judge whether the budget requirement exists first. Your output should be in json format as follows:
 {{
@@ -183,6 +192,23 @@ Please analyze step-by-step based on the dimensions in the 'Review Criteria'.You
       "meets_criteria": true or false
     }},
     {{
+      "criteria": "EVERY accommodation's, transportation's, restaurant's, attraction's cost is provided", 
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "EVERY accommodation's, transportation's, restaurant's, attraction's rating is provided", 
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }},
+    {{
+      "criteria": "Transportation Details",
+      "if_departure_day_transportation_cost_provided": true or false,
+      "if_return_day_transportation_cost_provided": true or false,
+      "observations": "your observations",
+      "meets_criteria": true or false
+    }}
+    {{
       "criteria": "Personalized Requirements",
       "observations": "your observations",
       "meets_criteria": true or false
@@ -199,13 +225,6 @@ Please analyze step-by-step based on the dimensions in the 'Review Criteria'.You
     }},
     {{
       "criteria": "Flexibility",
-      "observations": "your observations",
-      "meets_criteria": true or false
-    }},
-    {{
-      "criteria": "Transportation Details",
-      "if_departure_day_transportation_cost_provided": true or false,
-      "if_return_day_transportation_cost_provided": true or false,
       "observations": "your observations",
       "meets_criteria": true or false
     }}
