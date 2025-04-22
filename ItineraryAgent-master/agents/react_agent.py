@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 print(os.getcwd())
 print(os.path.join(os.getcwd(), "tools"))
 sys.path.append(os.path.abspath(os.getcwd()))
@@ -103,6 +104,7 @@ class ReactAgent:
             else:
                 print("the ai gave an unexpected response:", response)
                 if response != "error: list index out of range":
+                    logger.info(f"the model give response: {response}\n")
                     response = f"Please remember that only the following tags are allowed: {THOUGHT_HEADER + STOP_WORD}, {ACTION_HEADER + STOP_WORD}, {ACTION_INPUT_HEADER + STOP_WORD}, {ANSWER_HEADER}"
             if not is_tool_input:
                 response += STOP_WORD
