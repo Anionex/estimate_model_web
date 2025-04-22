@@ -166,6 +166,7 @@ def calculate_average_rating_for_raw(itinerary, query):
     
     return average_rating
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
 def calculate_budget_for_raw(itinerary, query, extra_requirements=''):
     """
     提取行程中的预算信息
@@ -177,6 +178,7 @@ def calculate_budget_for_raw(itinerary, query, extra_requirements=''):
     expense_info = calculate_budget(response)
     return expense_info
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
 def count_poi_for_raw(itinerary, query):
     """
     计算行程中的兴趣点数量
