@@ -102,7 +102,8 @@ class ReactAgent:
                 response = "Please remember that you shouldn't generate Tool Output by yourself"
             else:
                 print("the ai gave an unexpected response:", response)
-                response = f"Please remember that only the following tags are allowed: {THOUGHT_HEADER + STOP_WORD}, {ACTION_HEADER + STOP_WORD}, {ACTION_INPUT_HEADER + STOP_WORD}, {ANSWER_HEADER}"
+                if response != "error: list index out of range":
+                    response = f"Please remember that only the following tags are allowed: {THOUGHT_HEADER + STOP_WORD}, {ACTION_HEADER + STOP_WORD}, {ACTION_INPUT_HEADER + STOP_WORD}, {ANSWER_HEADER}"
             if not is_tool_input:
                 response += STOP_WORD
             print("[1]" + response)
