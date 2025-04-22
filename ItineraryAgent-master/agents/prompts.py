@@ -17,7 +17,7 @@ You use <Analysis:>, <Tool Invocation:> and <Tool Input:> tags to think and invo
 <Tool Input:{{"city":"A"}}>
 When you want to select a restaurant preferred by the user from the restaurants you just got, you can output:
 <Analysis:I just got the restaurant information in city A, because the user prefers Japanese cuisine, so I choose the sushi restaurant Kushiro with a high rating>
-Use the <Itinerary:> tag to provide the complete itinerary.Format: <Itinerary: (write your itinerary here...,no estimate cost)>.
+Use the <Itinerary:> tag to provide the complete itinerary.Format: <Itinerary: (write your itinerary here...,no estimate cost or expense summary)>.
 
 ## Information Collection Rules
 Default departure date: the day after {current_date}; Default departure city: Kennesaw, GA.
