@@ -1,0 +1,5 @@
+sudo kill -9 $(sudo lsof -t -i :5000)
+conda activate estimate_web
+gunicorn -w 4 -t 2 backend:app --bind 127.0.0.1:5000 --daemon --access-logfile access.log --error-logfile error.log
+lsof -t -i :5000
+tail -f error.log
