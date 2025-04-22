@@ -54,7 +54,8 @@ class OpenAIChat():
             response = self._make_api_call(messages)
             full_response = ""
             for chunk in response:
-                if chunk.choices[0].delta.content is not None:
+                # if chunk.choices[0].delta.content is not None:
+                if chunk.choices and chunk.choices[0].delta.content is not None:
                     if is_verbose:
                         print(chunk.choices[0].delta.content, end="")
                     full_response += chunk.choices[0].delta.content
@@ -96,12 +97,15 @@ class OpenAIChat():
             print(f"error: {str(e)}")
             # tmp 
             # write error to file
-            with open('chat_model_error.txt', 'a') as f:
+            with open('chat_model_error.txt', 'w') as f:
                 f.write(f"error: {str(e)}\n")
+            print(f"file saved at {os.path.abspath('chat_model_error.txt')}")
             return f"error: {str(e)}"
 
 if __name__ == '__main__':
 
     model = OpenAIChat(model='gpt-4o', temperature=0, stop=['\n'])
     # print(model.chat('输出一个唐诗', [])[0])
-    print(model.create_assistant_completion('山重水复疑无路, 柳暗花明又一', '你是一个诗人'))
+    # print(model.create_assistant_completion('山重水复疑无路, 柳暗花明又一', '你是一个诗人'))
+    # 测试流式输出
+    print(model.chat('hi', [], '你是一个诗人'))
