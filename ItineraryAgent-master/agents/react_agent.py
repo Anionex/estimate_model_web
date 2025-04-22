@@ -1,6 +1,18 @@
 import sys
 import os
 import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('access.log'),  # 输出到 Gunicorn 的 access.log
+        logging.FileHandler('error.log'),   # 输出到 Gunicorn 的 error.log
+        logging.StreamHandler()  # 同时输出到控制台
+    ]
+)
+
+logger = logging.getLogger(__name__)
 print(os.getcwd())
 print(os.path.join(os.getcwd(), "tools"))
 sys.path.append(os.path.abspath(os.getcwd()))
