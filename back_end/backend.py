@@ -296,7 +296,7 @@ def ask_our():
     data = request.json
     messages = data.get('query', "")
     conversation_id = data.get('conversation_id')
-
+    print("ask_ourmodel received data: ",data)
     conversation = ModelEstimate.query.get(conversation_id)
 
     if conversation:
