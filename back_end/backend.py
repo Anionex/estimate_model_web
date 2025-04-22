@@ -195,7 +195,7 @@ def parse_query(query) -> dict:
         "is_a_itinerary_planning_request": bool,
         "departure_date": string,  // date in "YYYY-MM-DD" or "Not specified"
         "return_date": string,  // date in "YYYY-MM-DD" or "Not specified"
-        "duration": number  // number of days
+        "duration": number  // number of days, 如果输入中有指定，直接填写，否则填写为return date - departure date + 1的计算结果,remember to add 1
     }    
     """)
     return get_json_response(system_prompt=f"Your task is to parse the given itinerary planning request.current year: {datetime.now().year}.",
@@ -555,6 +555,7 @@ def save_model_output(query: str, stdout: str, stderr: str, model_name: str) -> 
             f.write(stderr)
 
 if __name__ == '__main__':
+    # print(parse_query("Plan me a trip from Los Angeles to Phoenix from 1 May 2025 to 10 May2025 with a budget of 900 usd with a duration of 11 days"))
     app.run(debug=DEBUG, threaded=True)
 
 
