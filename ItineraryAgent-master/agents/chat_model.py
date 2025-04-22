@@ -94,6 +94,10 @@ class OpenAIChat():
             return full_response
         except Exception as e:
             print(f"error: {str(e)}")
+            # tmp 
+            # write error to file
+            with open('chat_model_error.txt', 'a') as f:
+                f.write(f"error: {str(e)}\n")
             return f"error: {str(e)}"
 
 if __name__ == '__main__':
