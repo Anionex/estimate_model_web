@@ -1,18 +1,27 @@
 import os
 import sys
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
-sys.path.append(os.path.abspath(os.getcwd()))
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-sys.path.append(os.path.join(current_dir, '..'))
-# 添加项目根目录到 Python 路径
+
+# 添加所有可能的路径
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-sys.path.insert(0, root_dir)
+project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, root_dir)  # 项目根目录
+sys.path.insert(0, project_dir)  # TravelPlanner-master 目录
 
 from config import *
 from langchain_community.utilities import GoogleSerperAPIWrapper
 search = GoogleSerperAPIWrapper()
-from utils.chat_model import OpenAIChat
+
+# 更新 langchain 导入
+import importlib.util
+chat_model_spec = importlib.util.find_spec("utils.chat_model")
+if chat_model_spec is not None:
+    from utils.chat_model import OpenAIChat
+else:
+    # 尝试其他可能的路径
+    sys.path.insert(0, os.path.join(root_dir, 'utils'))
+    from chat_model import OpenAIChat
+
 from functools import lru_cache
 search = GoogleSerperAPIWrapper()
 llm = OpenAIChat(model="gpt-4o")
