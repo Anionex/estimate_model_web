@@ -1,13 +1,15 @@
 import os
 import sys
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
-current_dir = os.path.dirname(__file__)
-external_dir = os.path.abspath(os.path.join(current_dir, '..'))  
-sys.path.append(external_dir)
+# current_dir = os.path.dirname(__file__)
+# external_dir = os.path.abspath(os.path.join(current_dir, '..'))  
+# sys.path.append(external_dir)
 from openai import OpenAI
 from config import *
 from langchain_community.utilities import GoogleSerperAPIWrapper
 search = GoogleSerperAPIWrapper()
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, root_dir)
 from utils.chat_model import OpenAIChat
 from langchain_openai import ChatOpenAI
 from functools import lru_cache

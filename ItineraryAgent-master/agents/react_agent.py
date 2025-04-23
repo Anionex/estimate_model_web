@@ -11,10 +11,10 @@ sys.path.append(os.path.abspath(os.getcwd()))
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "tools")))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-sys.path.insert(0, os.path.join(root_dir, 'utils'))
+sys.path.insert(0, root_dir)
 from datetime import datetime
 import json5
-from chat_model import OpenAIChat
+from utils.chat_model import OpenAIChat
 from tool_registry import Tools
 from prompts import REACT_PROMPT, TOOL_DESC
 import os, sys
