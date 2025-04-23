@@ -144,9 +144,9 @@ If no relevant information is found, set it to "{default_value}". Do not output 
     if not attribute in completion:
         return default_value, extra_info
     return completion.split(attribute+'":')[1].split('}')[0].strip().strip('"'), extra_info
-from utils.prompts_for_checker import *
-from utils.chat_model import OpenAIChat
-from utils.plan_checker import calculate_budget, calculate_rating, count_poi
+sys.path.insert(0, os.path.join(root_dir, 'utils'))
+from prompts_for_checker import *
+from plan_checker import calculate_budget, calculate_rating, count_poi
 
 check_llm = OpenAIChat(model="gpt-4o", temperature=0, is_verbose=True)
 
