@@ -1,9 +1,14 @@
 import os
 import sys
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
-current_dir = os.path.dirname(__file__)
-external_dir = os.path.abspath(os.path.join(current_dir, '..'))  
-sys.path.append(external_dir)
+sys.path.append(os.path.abspath(os.getcwd()))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+sys.path.append(os.path.join(current_dir, '..'))
+# 添加项目根目录到 Python 路径
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, root_dir)
+
 from config import *
 from langchain_community.utilities import GoogleSerperAPIWrapper
 search = GoogleSerperAPIWrapper()
