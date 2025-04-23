@@ -10,7 +10,8 @@ print(os.path.join(os.getcwd(), "tools"))
 sys.path.append(os.path.abspath(os.getcwd()))
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "tools")))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, os.path.join(root_dir, 'utils'))
 from datetime import datetime
 import json5
 from utils.chat_model import OpenAIChat
