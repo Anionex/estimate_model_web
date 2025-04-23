@@ -8,7 +8,7 @@ from openai import OpenAI
 from config import *
 from langchain_community.utilities import GoogleSerperAPIWrapper
 search = GoogleSerperAPIWrapper()
-from agents.chat_model import OpenAIChat
+from utils.chat_model import OpenAIChat
 from langchain_openai import ChatOpenAI
 from functools import lru_cache
 search = GoogleSerperAPIWrapper()

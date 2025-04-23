@@ -13,7 +13,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime
 import json5
-from chat_model import OpenAIChat
+from utils.chat_model import OpenAIChat
 from tool_registry import Tools
 from prompts import REACT_PROMPT, TOOL_DESC
 import os, sys

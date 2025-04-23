@@ -12,8 +12,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 sys.path.append(os.path.join(current_dir, '..'))
 from chat_model import OpenAIChat
-from prompts import *
-from config import *
+from prompts_for_checker import *
 
 def calculate_budget(response):
     """

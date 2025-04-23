@@ -6,7 +6,7 @@ import os
 import json5
 from config import *
 from agents.planner_two_stage_in_one import planner_two_stage_in_one
-from agents.plan_checker import PlanChecker
+from utils.plan_checker import PlanChecker
 from agents.prompts import REACT_PLANNER_PROMPT_TWO_STAGE_IN_ONE
 from tenacity import retry, stop_after_attempt, wait_fixed
 
