@@ -839,7 +839,7 @@ if __name__ == '__main__':
                     expense_info = calculate_budget_for_raw(planner_results, query)
                 except Exception as e:
                     print(f"Failed to calculate expense info: {e}")
-                    expense_info = {"Total": 0, "Unit": "USD"}
+                    expense_info = {"Total": "Fail to calculate because the model gives incomplete information.", "Unit": "USD"}
                 plan_info = {"itinerary":planner_results, 
                     "expense_info": expense_info, 
                     "average_rating": rating_info
