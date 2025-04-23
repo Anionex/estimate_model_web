@@ -14,7 +14,7 @@ root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, os.path.join(root_dir, 'utils'))
 from datetime import datetime
 import json5
-from utils.chat_model import OpenAIChat
+from chat_model import OpenAIChat
 from tool_registry import Tools
 from prompts import REACT_PROMPT, TOOL_DESC
 import os, sys
