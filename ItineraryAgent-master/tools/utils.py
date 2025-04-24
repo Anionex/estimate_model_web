@@ -93,7 +93,7 @@ def filter_search_results(search_results, query):
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
 def get_restaurant_average_cost(restaurant_name):
     extra_info = ""
-    query = f"{restaurant_name} average cost 人均 价格"
+    query = f"{restaurant_name} average cost"
     payload = json.dumps({
         "q": query,
         "num": SEARCH_NUM
