@@ -1,3 +1,4 @@
+INF = 1e9
 GLOBAL_LANGUAGE = "en"
 GLOBAL_CURRENCY = "USD"
 LOCATION = "United States"

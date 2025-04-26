@@ -1,4 +1,4 @@
-from utils.func import get_valid_name_city,extract_before_parenthesis,extract_numbers_from_filenames
+from func import get_valid_name_city,extract_before_parenthesis,extract_numbers_from_filenames
 from tools.flights.apis import Flights
 from tools.accommodations.apis import Accommodations
 from tools.restaurants.apis import Restaurants

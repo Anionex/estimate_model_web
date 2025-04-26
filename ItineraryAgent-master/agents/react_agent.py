@@ -18,7 +18,9 @@ from utils.chat_model import OpenAIChat
 from tool_registry import Tools
 from prompts import REACT_PROMPT, TOOL_DESC
 import os, sys
-from config import *
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, root_dir)
+from utils.config import *
 
 from tool_funcs import calculator, google_search
 

@@ -5,7 +5,8 @@ from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_t
 # external_dir = os.path.abspath(os.path.join(current_dir, '..'))  
 # sys.path.append(external_dir)
 from openai import OpenAI
-from config import *
+
+from .config import *
 from langchain_community.utilities import GoogleSerperAPIWrapper
 search = GoogleSerperAPIWrapper()
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
@@ -23,23 +24,6 @@ llm = OpenAIChat(model="gpt-4o")
 # llm.kwargs['model'] = "llama-3.2-90b-text-preview"
 
 
-# from tavily import TavilyClient
-# tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
-from translate import Translator
-
-@lru_cache()
-def translate_city(city_name): # temporary method
-    if not any('\u4e00' <= char <= '\u9fff' for char in city_name):
-        return city_name  # 如果不包含中文字符，直接返回原名
-    
-    translator = Translator(to_lang="en", from_lang="zh")
-    try:
-        translated = translator.translate(city_name)
-        return translated.split(' ')[0]
-    except Exception as e:
-        print(f"翻译过程中发生错误: {str(e)}")
-        return city_name
 
 import requests
 import json
@@ -151,6 +135,64 @@ If no relevant information is found, set it to "{default_value}". Do not output 
     if not attribute in completion:
         return default_value, extra_info
     return completion.split(attribute+'":')[1].split('}')[0].strip().strip('"'), extra_info
+sys.path.insert(0, os.path.join(root_dir, 'utils'))
+from .prompts_for_checker import *
+from .plan_checker import calculate_budget, calculate_rating, count_poi
+
+check_llm = OpenAIChat(model="gpt-4o", temperature=0, is_verbose=True)
+
+def calculate_average_rating_for_raw(itinerary, query):
+    """
+    提取行程中的平均评分信息
+    """
+    rating_response, _ = check_llm.chat(prompt=f"Here is the itinerary:\n{itinerary}",
+                                  history=[],
+                                  meta_instruction=RATING_SUMMARY_SYSTEM_PROMPT)
+    rating_info = calculate_rating(rating_response)
+    
+    poi_response, _ = check_llm.chat(prompt=f"Here is the itinerary:\n{itinerary}",
+                               history=[],
+                               meta_instruction=COUNT_POI_SYSTEM_PROMPT)
+    poi_info = count_poi(poi_response)
+    
+    average_rating = {}
+    categories = [
+        ('Attractions', 'Total Attraction Ratings', 'Total Attractions'),
+        ('Accommodations', 'Total Accommodation Ratings', 'Total Accommodations'),
+        ('Restaurants', 'Total Restaurant Ratings', 'Total Restaurants'),
+        ('Overall', 'Total', 'Total')
+    ]
+    
+    for category, rating_key, count_key in categories:
+        total_rating = rating_info[rating_key]
+        total_count = poi_info[count_key]
+        
+        average_rating[category] = round(total_rating / total_count, 2) if total_count > 0 else 0.0
+    
+    return average_rating
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
+def calculate_budget_for_raw(itinerary, query, extra_requirements=''):
+    """
+    提取行程中的预算信息
+    """
+    sys_prompt = PLAN_CHECKER_PROMPT_BUDGET.format(extra_requirements=extra_requirements, query=query)
+    history = []
+    response, history = check_llm.chat(prompt=itinerary, history=history, meta_instruction=sys_prompt)
+    
+    expense_info = calculate_budget(response)
+    return expense_info
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
+def count_poi_for_raw(itinerary, query):
+    """
+    计算行程中的兴趣点数量
+    """
+    response, _ = check_llm.chat(prompt=f"Here is the itinerary:\n{itinerary}",
+                           history=[],
+                           meta_instruction=COUNT_POI_SYSTEM_PROMPT)
+    poi_info = count_poi(response)
+    return poi_info
 
 # Usage examples
 if __name__ == "__main__":

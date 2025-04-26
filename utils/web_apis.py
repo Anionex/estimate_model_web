@@ -6,22 +6,23 @@ import time
 import concurrent.futures
 import googlemaps
 from datetime import datetime, timedelta
-import dotenv
+from openai import OpenAI
 from diskcache import Cache
 from functools import wraps, lru_cache
 current_dir = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(os.path.join(current_dir, '..')))
 
-from config import *
-from tools.utils import  get_restaurant_average_cost, get_entity_attribute
+from utils.config import *
+from .utils import get_restaurant_average_cost, get_entity_attribute
 
-dotenv.load_dotenv()
+
 
 
 from functools import lru_cache
 current_dir = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(os.path.join(current_dir, '..')))
 
+from .utils import get_restaurant_average_cost, get_entity_attribute
 
 # 设置缓存位置为当前文件的上两级目录
 current_dir = os.path.dirname(__file__)
@@ -63,7 +64,7 @@ amadeus = Client(
 )
 
 @disk_cache(expire=timedelta(days=30))
-def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOBAL_CURRENCY, rooms=1, language=GLOBAL_LANGUAGE, max_results=15):
+def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOBAL_CURRENCY, rooms=1, language=GLOBAL_LANGUAGE, max_results=15, min_price: int = 0, max_price: int = INF):
     try:
         # Translate first
         # city = translate_city(city)
@@ -72,7 +73,8 @@ def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOB
             keyword=city,
             subType=Location.ANY
         ).data[0]['iataCode']
-        
+        # tmp
+        print("the city code:", city_code)
         # Search for hotels in the city
         hotel_list = amadeus.reference_data.locations.hotels.by_city.get(
             cityCode=city_code  # City's IATA code
@@ -94,9 +96,9 @@ def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOB
                     checkInDate=check_in_date,
                     checkOutDate=check_out_date,
                     currency=currency,
-                    lang=language
+                    lang=language,
+                    priceRange=f"{min_price}-{max_price}"
                 )
-                
                 if hotel_offer.data:
                     offer = hotel_offer.data[0]
                     hotel_name = offer['hotel']['name']
@@ -271,8 +273,13 @@ def get_distance_matrix(origin, destination, mode, language=GLOBAL_LANGUAGE):
                                            destinations=(destination_lat, destination_lng),
                                            mode=mode,
                                            language=language)
-    duration = distance_matrix['rows'][0]['elements'][0]['duration']['text']
-    distance = distance_matrix['rows'][0]['elements'][0]['distance']['text']
+    try:
+        duration = distance_matrix['rows'][0]['elements'][0]['duration']['text']
+        distance = distance_matrix['rows'][0]['elements'][0]['distance']['text']
+    except Exception as e:
+        print(e)
+        duration = "N/A"
+        distance = "N/A"
     return f"{mode.capitalize()}, from {origin} to {destination}, duration: {duration}, distance: {distance}"
 
 AMADEUS_MAX_LENGTH = 28
@@ -340,8 +347,9 @@ if __name__ == "__main__":
     # result = get_flights("ZGN", "LAX", "2024-10-19")
     # result = get_attractions("San Francisco")
     # result = get_accommodations("San Francisco", "2024-10-19", "2024-10-20", 1)
-    # FlightSearch[PIE, RFD, 2024-10-24]
-    result = get_flights('PIE', 'RFD', input('YYYY_MM_DD'))
+    # Travel from Las Vegas to Stockton
+    # result = get_distance_matrix('Las Vegas, US', 'Stockton, US', 'driving')
+    result = get_accommodations("Los Angeles    ", "2025-04-28", "2025-04-29", 1, min_price=0, max_price=100)
     end_time = time.time()
     
     print(result)

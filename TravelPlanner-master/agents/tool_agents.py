@@ -24,7 +24,7 @@ from langchain.schema import (
     SystemMessage
 )
 from agents.prompts import zeroshot_react_agent_prompt
-from utils.func import load_line_json_data, save_file
+from func import load_line_json_data, save_file
 import sys
 import json
 import openai

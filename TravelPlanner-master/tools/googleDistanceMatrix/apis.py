@@ -1,5 +1,5 @@
 import requests
-from utils.func import extract_before_parenthesis
+from func import extract_before_parenthesis
 import os
 from requests.exceptions import SSLError
 import time

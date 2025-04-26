@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas import DataFrame
 from typing import Optional
-from utils.func import extract_before_parenthesis
+from func import extract_before_parenthesis
 
 class Restaurants:
     def __init__(self, path="../database/restaurants/clean_restaurant_2022.csv"):

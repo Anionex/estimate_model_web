@@ -2,9 +2,21 @@ import os
 import json
 import sys
 import requests
+import dotenv
+dotenv.load_dotenv()
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.utils import filter_search_results
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, root_dir)
+
+print("root_dir:", root_dir)
+print("Current directory:", os.path.abspath(__file__))
+print("Python path:", sys.path)
+print("Does utils directory exist?", os.path.exists(os.path.join(root_dir, 'utils')))
+print("Files in utils directory:", os.listdir(os.path.join(root_dir, 'utils')))
+
+from utils.utils import filter_search_results
+from utils.config import *
 # from tools.attractions.apis import Attractions
 # from tools.restaurants.apis import Restaurants
 # from tools.accommodations.apis import Accommodations
@@ -12,8 +24,8 @@ from tools.utils import filter_search_results
 # from tools.googleDistanceMatrix.apis import GoogleDistanceMatrix
 # from tools.notebook.apis import Notebook
 # from plan_checker import PlanChecker
-from tools import web_apis
-from config import *
+from utils import web_apis
+
 
 # 实例化所有工具
 # attractions = Attractions()

@@ -4,11 +4,15 @@ print(os.getcwd())
 print(os.path.join(os.getcwd(), "tools"))
 sys.path.append(os.path.abspath(os.getcwd()))
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "tools")))
+sys.path.append(os.path.join(os.getcwd(), "ItineraryAgent-master"))
+print(os.path.join(os.getcwd(), "ItineraryAgent-master"))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 from agents.react_agent import ReactAgent
 from prompts import REACT_PLANNER_PROMPT_TWO_STAGE_IN_ONE
 from tool_funcs import *
-from config import *
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, root_dir)
+from utils.config import *
 planner_two_stage_in_one = ReactAgent(model="gpt-4o", stop=['>']) # import this
 
 
@@ -111,7 +115,18 @@ planner_two_stage_in_one.tools.add_tool(
                 'name': 'adults',
                 'description': '成人数量',
                 'schema': {'type': 'integer'},
+            },
+            {
+                "name": "min_price",
+                "description": "筛选的最低价格，不指定时默认为零",
+                'schema': {'type': 'integer'},
+            },
+            {
+                "name": "max_price",
+                "description": "筛选的最高价格，不指定时默认为无上限",
+                'schema': {'type': 'integer'},
             }
+        
         ]
     )
 planner_two_stage_in_one.tools.add_tool(
@@ -165,5 +180,13 @@ if __name__ == '__main__':
     #     "Please help me plan a trip from St. Petersburg to Rockford spanning 3 days from March 16th to March 18th, 2022. The travel should be planned for a single person with a budget of $1,700.", 
     #     # extra_requirements="请使用中文输出",
     #     system_prompt=REACT_PLANNER_PROMPT_TWO_STAGE_IN_ONE)
-    planner_two_stage_in_one.tools.execute_tool("get_accommodations", city="Rockford")
+    planner_two_stage_in_one.tools.execute_tool(
+        "get_accommodations", 
+        city="Rockford", 
+        check_in_date="2025-04-26",    # 需要提供具体日期
+        check_out_date="2024-04-30",   # 需要提供具体日期
+        adults=1,                       # 需要提供人数
+        min_price=0, 
+        max_price=200
+    )
     # print(result)

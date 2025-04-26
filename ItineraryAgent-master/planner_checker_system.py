@@ -4,7 +4,9 @@ import sys
 import os
 
 import json5
-from config import *
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, root_dir)
+from utils.config import *
 from agents.planner_two_stage_in_one import planner_two_stage_in_one
 from utils.plan_checker import PlanChecker
 from agents.prompts import REACT_PLANNER_PROMPT_TWO_STAGE_IN_ONE
