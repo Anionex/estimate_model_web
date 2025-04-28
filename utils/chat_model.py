@@ -92,14 +92,12 @@ class OpenAIChat():
                     full_response += chunk.choices[0].delta.content
             if is_verbose:
                 print()
+            # 检查最后一个chunk的finish_reason
+            if chunk.choices[0].finish_reason != "stop":
+                raise Exception(f"Unexpected finish_reason: {chunk.choices[0].finish_reason}")
             return full_response
         except Exception as e:
             print(f"error: {str(e)}")
-            # tmp 
-            # write error to file
-            with open('chat_model_error.txt', 'w') as f:
-                f.write(f"error: {str(e)}\n")
-            print(f"file saved at {os.path.abspath('chat_model_error.txt')}")
             return f"error: {str(e)}"
 
 if __name__ == '__main__':
