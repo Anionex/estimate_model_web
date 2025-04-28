@@ -346,7 +346,7 @@ class ReactAgent:
                 try:
                     if validate_city_format(action_arg, self.city_set):
                         self.scratchpad = self.scratchpad.replace(to_string(self.current_data).strip().strip(),'Masked due to limited length. Make sure the data has been written in Notebook.')
-                        self.current_data = self.tools['accommodations'].run(action_arg.split(', ')[0], action_arg.split(', ')[1], action_arg.split(', ')[2], action_arg.split(', ')[3])
+                        self.current_data = self.tools['accommodations'].run(action_arg.split(', ')[0], action_arg.split(', ')[1], action_arg.split(', ')[2], action_arg.split(', ')[3], action_arg.split(', ')[4], action_arg.split(', ')[5])
                         self.current_observation = to_string(self.current_data).strip('\n').strip()
                         self.scratchpad += self.current_observation
                         self.__reset_record()
@@ -824,7 +824,7 @@ if __name__ == '__main__':
                 print("planner_results: ", planner_results)
                 
                 ## 进行rating和budget的计算
-                from tools.utils import calculate_average_rating_for_raw, calculate_budget_for_raw
+                from utils.utils import calculate_average_rating_for_raw, calculate_budget_for_raw
                 try:
                     rating_info = calculate_average_rating_for_raw(planner_results, query)
                 except Exception as e:

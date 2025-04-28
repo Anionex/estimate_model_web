@@ -18,14 +18,16 @@ Destination: The destination city of your journey.
 Mode: The method of transportation. 
 Example: GoogleDistanceMatrix[Paris, Lyon, driving] would provide driving distance, time and cost between Paris and Lyon.
 
-(3) AccommodationSearch[City, Check-In Date, Check-Out Date, Adults]:
+(3) AccommodationSearch[City, Check-In Date, Check-Out Date, Adults, Min Price, Max Price]:
 Description: Discover accommodations in your desired city.
 Parameter: 
 City - The name of the city where you're seeking accommodation.
 Check-In Date - The date of you check-in in YYYY-MM-DD format.
 Check-Out Date - The date of you check-out in YYYY-MM-DD format.    
 Adults - The number of adults you're seeking accommodation for.
-Example: AccommodationSearch[Rome, 2022-02-01, 2022-02-03, 2] would present a list of hotel rooms in Rome.
+Min Price - The minimum price of the accommodation you're seeking, default is 0.
+Max Price - The maximum price of the accommodation you're seeking, default is unlimited.
+Example: AccommodationSearch[Rome, 2022-02-01, 2022-02-03, 2, 100, 200] would present a list of hotel rooms in Rome with price between 100 and 200.
 
 (4) RestaurantSearch[City, Query]:
 Description: Explore dining options in a city of your choice.

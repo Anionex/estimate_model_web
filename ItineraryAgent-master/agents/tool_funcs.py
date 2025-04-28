@@ -36,6 +36,9 @@ def calculator(expression: str):
 def get_recommend_city(area: str):
     return web_apis.get_entity_attribute(area, "recommended travel cities", "Not Found")[0]
 
+def get_city(state: str):
+    return web_apis.get_entity_attribute(state, "cities", "Not Found")[0]
+
 def google_search(search_query: str, gl: str = 'The United States'):
     query = search_query
     payload = json.dumps({
@@ -60,7 +63,7 @@ def get_restaurants(city: str, query: str = "must-visit restaurants"):
 # def get_accommodations(city: str):
 #     return web_apis.get_accommodations(city=city)
 
-def get_accommodations(city: str, check_in_date: str, check_out_date: str, adults: int, min_price: int, max_price: int):
+def get_accommodations(city: str, check_in_date: str, check_out_date: str, adults: int, min_price: int = 0, max_price: int = INF):
     return web_apis.get_accommodations(city=city, check_in_date=check_in_date, check_out_date=check_out_date, adults=adults, min_price=min_price, max_price=max_price)
 
 def get_flights(origin: str, destination: str, departure_date: str):

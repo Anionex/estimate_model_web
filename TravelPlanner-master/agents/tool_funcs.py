@@ -4,19 +4,10 @@ import sys
 import requests
 import dotenv
 dotenv.load_dotenv()
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, root_dir)
-
-print("root_dir:", root_dir)
-print("Current directory:", os.path.abspath(__file__))
-print("Python path:", sys.path)
-print("Does utils directory exist?", os.path.exists(os.path.join(root_dir, 'utils')))
-print("Files in utils directory:", os.listdir(os.path.join(root_dir, 'utils')))
-
 from utils.utils import filter_search_results
-from utils.config import *
 # from tools.attractions.apis import Attractions
 # from tools.restaurants.apis import Restaurants
 # from tools.accommodations.apis import Accommodations
@@ -25,7 +16,7 @@ from utils.config import *
 # from tools.notebook.apis import Notebook
 # from plan_checker import PlanChecker
 from utils import web_apis
-
+from utils.config import *
 
 # 实例化所有工具
 # attractions = Attractions()
@@ -48,7 +39,7 @@ def get_recommend_city(area: str):
 def get_city(state: str):
     return web_apis.get_entity_attribute(state, "cities", "Not Found")[0]
 
-def google_search(search_query: str, gl: str = "The United States"):
+def google_search(search_query: str, gl: str = 'The United States'):
     query = search_query
     payload = json.dumps({
         "q": query,
@@ -72,8 +63,8 @@ def get_restaurants(city: str, query: str = "must-visit restaurants"):
 # def get_accommodations(city: str):
 #     return web_apis.get_accommodations(city=city)
 
-def get_accommodations(city: str, check_in_date: str, check_out_date: str, adults: int):
-    return web_apis.get_accommodations(city=city, check_in_date=check_in_date, check_out_date=check_out_date, adults=adults)
+def get_accommodations(city: str, check_in_date: str, check_out_date: str, adults: int, min_price: int, max_price: int):
+    return web_apis.get_accommodations(city=city, check_in_date=check_in_date, check_out_date=check_out_date, adults=adults, min_price=min_price, max_price=max_price)
 
 def get_flights(origin: str, destination: str, departure_date: str):
     return web_apis.get_flights(origin=origin, destination=destination, date=departure_date)
