@@ -91,92 +91,107 @@ Do not output anything else.
 
 BUDGET_ADVICE_PROMPT = "Why is the itinerary rejected in the budget check? Please provide a brief suggestion."
 
-PLAN_CHECKER_PROMPT = """# Itinerary Reviewer
-
-You are a professional itinerary reviewer, responsible for reviewing itineraries provided by users to ensure they meet user needs and align with best practices for travel planning.**You assume the provided itinerary's budget has already met the user's requirements**.Do not consider the budget when reviewing, do not give any advice about the budget.
+PLAN_CHECKER_PROMPT = """\
+You are a professional and strict travel itinerary reviewer. Your task is to evaluate the provided travel itinerary against several assertion based on the user's original travel requirements.
 {extra_requirements}
-
-## Review Criteria (All requirements must be met for approval)
-- Basic constraints: The itinerary must meet the user's basic requirements, such as the number of days and number of people. A common mistake is planning one more day than the required number of days (departure and return days are also counted as travel days!).
-- Information Completeness and Authenticity: The itinerary must not contain any tentative, missing, or fabricated information. The itinerary must include at least one entry each for restaurants, attractions, accommodations, and transportation, especially the accommodation information.
-- Personalized Requirements: If user has provided personalized requirements, the itinerary must meet them.
-- Reasonable Time Allocation: The itinerary should not have overly tight or too loose schedules.
-- Unique Experiences: The itinerary should include cultural activities and local specialty cuisine to help travelers better understand the local culture and history.
-- Flexibility: The itinerary should have at least one segment of free exploration time.
-- Ensure outbound and return transportation is arranged with cost and flight number.
-- If the input is not an itinerary, output "Rejected" anyway.
-
-The user's request is as follows:
-"{query}"
-current date: {current_date}
-
 """
 
-ANALYZE_REASONABILITY_PROMPT = """The itinerary is as follows:
-{plan}
+ANALYZE_REASONABILITY_PROMPT_NL = """\
+User's original travel request:
+"{query}"
+Current date: {current_date}  
 
-Please analyze step-by-step based on the dimensions in the 'Review Criteria'.Your output should be in json format as follows:
+Provided travel itinerary:
+{plan}
+Please analyze the following assertions and provide detailed explanations:
+
+1. Is it an detailed itinerary?
+
+2. Are all meals (except breakfast in the hotel) clearly labeled with price information?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+3. Does the itinerary contain any tentative, missing, or fabricated information? Does the itinerary lack any entry each for restaurants, attractions, accommodations, and transportation, especially the accommodation information?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+4. Does the itinerary meet the user's basic requirements, such as the number of days and number of people? A common mistake is planning one more day than the required number of days (departure and return days are also counted as travel days!).
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+5. For every accommodation, attraction, is its cost provided?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+6. For every accommodation, attraction and restaurant, is its rating provided?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+7. Does the itinerary provide the transportation details for the departure day and the return day?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+8. Does the itinerary meet the personalized requirements?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+9. Does the itinerary have overly tight or too loose schedules?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+10. Does the itinerary include cultural activities and local specialty cuisine to help travelers better understand the local culture and history?
+Please analyze the itinerary day by day and step by step to make this judgment.
+
+For each assertion, please provide:
+- A detailed analysis examining the itinerary day by day
+- A clear conclusion whether the assertion is met (compliant) or not
+"""
+
+ANALYZE_REASONABILITY_PROMPT_NL2JSON = """\
+Your output must strictly adhere to the following JSON format:
 {{
   "itinerary_review": [
     {{
-      "criteria": "Is an itinerary",
-      "observations": "your observations",
-      "meets_criteria": true or false(if it is false, stop here),
+      "assertion": "Is an itinerary",
+      "compliant": true or false,
     }},
     {{
-      "criteria": "Basic Constraints",
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "Every meal is clearly labeled with price information, except for breakfast",
+      "compliant": true or false
     }},
     {{
-      "criteria": "Information Completeness and Authenticity", 
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "The itinerary meets basic requirements (days, people count)",
+      "compliant": true or false
     }},
     {{
-      "criteria": "EVERY accommodation's, transportation's, restaurant's, attraction's cost is provided", 
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "The itinerary is complete without missing/tentative information",
+      "compliant": true or false
     }},
     {{
-      "criteria": "EVERY accommodation's, transportation's, restaurant's, attraction's rating is provided", 
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "All costs are clearly provided for accommodations and attractions",
+      "compliant": true or false
     }},
     {{
-      "criteria": "Transportation Details",
-      "if_departure_day_transportation_cost_provided": true or false,
-      "if_return_day_transportation_cost_provided": true or false,
-      "observations": "your observations",
-      "meets_criteria": true or false
-    }}
-    {{
-      "criteria": "Personalized Requirements",
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "All ratings are clearly provided (accommodations, attractions, restaurants)", 
+      "compliant": true or false
     }},
     {{
-      "criteria": "Reasonable Time Allocation",
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "Transportation details are provided for departure and return days",
+      "compliant": true or false,
+      "departure_transport_cost_provided": true or false,
+      "return_transport_cost_provided": true or false
     }},
     {{
-      "criteria": "Unique Experiences",
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "The itinerary meets personalized requirements",
+      "compliant": true or false
     }},
     {{
-      "criteria": "Flexibility",
-      "observations": "your observations",
-      "meets_criteria": true or false
+      "assertion": "The schedule is well-balanced (not too tight or loose)",
+      "compliant": true or false
+    }},
+    {{
+      "assertion": "The itinerary includes cultural activities and local cuisine",
+      "compliant": true or false
     }}
   ]
-}}
-
+}}  
+Do not output anything else.
 """
 
 
-REASONABILITY_ADVICE_PROMPT = "Based on the analysis above, please provide concise suggestions for itinerary modification. Do not output an example of the modification. Do not output anything else."
+REASONABILITY_ADVICE_PROMPT = "Based on the analysis above, please provide concise suggestions for itinerary modification in natural language on where field \"compliant\" is false. Do not output an example of the modification. Do not output anything else."
 
 # ---Rating Accumulation Agent---
 RATING_SUMMARY_SYSTEM_PROMPT = """# Rating Accumulation Analyst

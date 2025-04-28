@@ -124,7 +124,7 @@ class PlanChecker:
         if check_stage == 'budget':
             sys_prompt = PLAN_CHECKER_PROMPT_BUDGET.format(extra_requirements=extra_requirements, query=query)
         elif check_stage == 'reasonability':
-            sys_prompt = PLAN_CHECKER_PROMPT.format(extra_requirements=extra_requirements, query=query, current_date=datetime.now().strftime("%Y-%m-%d"))
+            sys_prompt = PLAN_CHECKER_PROMPT.format(extra_requirements=extra_requirements)
         return sys_prompt
 
         
@@ -170,20 +170,27 @@ class PlanChecker:
         
         self.model.kwargs['model'] = 'gpt-4o'
         response, history = self.model.chat(
-            prompt=ANALYZE_REASONABILITY_PROMPT.format(plan=plan), 
+            prompt=ANALYZE_REASONABILITY_PROMPT_NL.format(plan=plan, query=query, current_date=datetime.now().strftime("%Y-%m-%d")), 
             history=history, 
             meta_instruction=sys_prompt)
+        
+        # NL to Format
+        response, history = self.model.chat(
+            prompt = ANALYZE_REASONABILITY_PROMPT_NL2JSON,
+            history=history,
+            meta_instruction=sys_prompt
+        )
         
         response = response.strip().strip('```json').strip('```').strip()
         response = json.loads(response)
         
         # 修改判断逻辑，检查 itinerary_review 中每个条目的 meets_criteria
-        if not all(item["meets_criteria"] for item in response["itinerary_review"]): 
+        if not all(item["compliant"] for item in response["itinerary_review"]): 
             # 输出不满足的标准
             failed_criteria = [
-                item["criteria"] 
+                item["assertion"] 
                 for item in response["itinerary_review"] 
-                if not item["meets_criteria"]
+                if not item["compliant"]
             ]
             for criterion in failed_criteria:
                 print(f"The {criterion} criterion is not met.")
