@@ -101,30 +101,34 @@ planner_two_stage_in_one.tools.add_tool(
         parameters=[
             {
                 'name': 'city',
-                'description': '城市名称',
+                'description': 'city name',
             },
             {
                 'name': 'check_in_date',
-                'description': '入住日期',
+                'description': 'check-in date',
             },
             {
                 'name': 'check_out_date',
-                'description': '退房日期',
+                'description': 'check-out date',
             },
             {
                 'name': 'adults',
-                'description': '成人数量',
+                'description': 'number of adults',
                 'schema': {'type': 'integer'},
             },
             {
                 "name": "min_price",
-                "description": "筛选的最低价格，不指定时默认为零",
+                "description": "minimum price",
+                "required": False,
+                "default": 0,
                 'schema': {'type': 'integer'},
             },
             {
                 "name": "max_price",
-                "description": "筛选的最高价格，不指定时默认为无上限",
+                "description": "maximum price",
                 'schema': {'type': 'integer'},
+                "required": False,
+                "default": "INF",
             }
         
         ]
