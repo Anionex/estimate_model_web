@@ -1,4 +1,4 @@
-# 旅行规划模型评估系统 (Travel Planning Model Evaluation System)
+# TravelDesigner旅行规划模型评估代码仓库
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/react-18.3+-61DAFB.svg)](https://reactjs.org/)
@@ -7,7 +7,7 @@
 
 ## 📝 项目概述
 
-这是一个基于Web的旅行规划AI模型评估系统，用于比较和评估不同AI模型在旅行规划任务上的表现。系统支持三种不同的模型： GPT-4、我们的自研模型和TravelPlanner模型，并提供用户友好的界面进行实时比较和评分。
+这是TravelDesigner的旅行规划AI模型评估代码仓库，用于比较和评估不同AI模型在旅行规划任务上的表现。系统支持三种不同的模型： GPT-4、我们的自研模型和TravelPlanner模型，并提供用户友好的界面进行实时比较和评分。
 
 
 ## 🏗️ 系统架构
