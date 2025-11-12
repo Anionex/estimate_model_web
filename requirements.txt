@@ -1,10 +1,13 @@
 altair
 amadeus
+cryptography
 datasets
 flask
+flask_migrate
 fqdn
 func-timeout
 googlemaps
+gunicorn
 grpcio-status
 isoduration
 langchain-community
@@ -12,6 +15,7 @@ langchain-google-genai
 langchain-openai
 langfuse
 pip-chill
+psutil
 simpy
 translate
 uri-template

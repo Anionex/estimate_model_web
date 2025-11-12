@@ -54,6 +54,8 @@ MODEL_FAIL_TO_COMPLETE_RESPONSE = {
     }
 }
 
+ACTIVE_CONDA_ENV = os.getenv('CONDA_DEFAULT_ENV', 'estimate_web')
+
 MODEL_TIME_OUT_RESPONSE = {
     "itinerary": "Our model timed out.",
     "average_rating": {
@@ -74,7 +76,7 @@ CORS(app)  # 允许跨域请求
 if os.name == 'nt':
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest"
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:root@localhost/modeltest"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:{env.get('DB_PASSWORD')}@localhost/modeltest"
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -437,7 +439,7 @@ def ask_tripadvisermodel(messages) -> dict:
         query = messages
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
         process = subprocess.Popen(
-            ['conda', 'run', '-n', 'estimate_web', 'python', python_script, query],
+            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -489,7 +491,7 @@ def ask_ourmodel(messages) -> dict:
         
         # 使用列表形式传递命令
         process = subprocess.Popen(
-            ['conda', 'run', '-n', 'estimate_web', 'python', python_script, query],
+            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
