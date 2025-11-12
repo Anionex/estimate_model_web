@@ -92,7 +92,7 @@ Do not output anything else.
 BUDGET_ADVICE_PROMPT = "Why is the itinerary rejected in the budget check? Please provide a brief suggestion."
 
 PLAN_CHECKER_PROMPT = """\
-You are a professional and strict travel itinerary reviewer. Your task is to evaluate the provided travel itinerary against several assertion based on the user's original travel requirements.
+You are a professional and strict travel itinerary reviewer. Your task is to evaluate the provided travel itinerary against several assertion based on the user's original travel requirements.You assume that the budget is already satisfied and there is no need to calcuate it.
 {extra_requirements}
 """
 
