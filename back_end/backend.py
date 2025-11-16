@@ -415,6 +415,173 @@ def rate():
         return jsonify({'error': 'Invalid conversation ID!'}), 404
 
 
+@app.route('/dev_admin/debug_model', methods=['POST'])
+def debug_model():
+    """流式调试模型API，实时返回stdout/stderr"""
+    data = request.json
+    query = data.get('query', '')
+    model_name = data.get('model', 'gpt')  # gpt, ourmodel, xxmodel
+    
+    def generate():
+        try:
+            if model_name == 'gpt':
+                # GPT模型使用流式API
+                messages = [
+                    {"role": "system", "content": "You are a professional itinerary planner. Output the itinerary based on the user's request directly, do not ask for any additional information."},
+                    {"role": "user", "content": query}
+                ]
+                yield f"data: {json.dumps({'type': 'info', 'message': '开始调用GPT模型...', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                
+                if DEBUG:
+                    yield f"data: {json.dumps({'type': 'stdout', 'message': 'test response', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'message': '完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                    return
+                
+                client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
+                stream = client.chat.completions.create(
+                    model="gpt-5",
+                    messages=messages,
+                    stream=True
+                )
+                
+                for chunk in stream:
+                    if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        yield f"data: {json.dumps({'type': 'stdout', 'message': content, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                
+                yield f"data: {json.dumps({'type': 'done', 'message': '完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                
+            elif model_name == 'ourmodel':
+                yield f"data: {json.dumps({'type': 'info', 'message': '开始调用Our Model...', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                for chunk in debug_ourmodel_stream(query):
+                    yield chunk
+                    
+            elif model_name == 'xxmodel':
+                yield f"data: {json.dumps({'type': 'info', 'message': '开始调用XX Model (TripAdvisor)...', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                for chunk in debug_tripadvisermodel_stream(query):
+                    yield chunk
+            else:
+                error_msg = f'未知模型: {model_name}'
+                logging.error(error_msg)
+                yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                
+        except Exception as e:
+            error_traceback = traceback.format_exc()
+            logging.error(f'debug_model错误: {str(e)}\n{error_traceback}')
+            yield f"data: {json.dumps({'type': 'error', 'message': f'错误: {str(e)}', 'traceback': error_traceback, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+    
+    return Response(generate(), mimetype='text/event-stream', headers={
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no'
+    })
+
+
+def debug_ourmodel_stream(query: str):
+    """流式调用ourmodel，实时输出stdout/stderr"""
+    process = None
+    try:
+        python_script = "../ItineraryAgent-master/planner_checker_system.py"
+        process = subprocess.Popen(
+            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # 合并stderr到stdout
+            text=True,
+            env=env,
+            shell=False,
+            bufsize=0,  # 无缓冲
+            universal_newlines=True
+        )
+        
+        # 实时读取输出
+        for line in iter(process.stdout.readline, ''):
+            if line:
+                line = line.rstrip()
+                # 判断消息类型
+                msg_type = 'stdout'
+                if 'error' in line.lower() or 'exception' in line.lower() or 'traceback' in line.lower():
+                    msg_type = 'error'
+                elif 'warning' in line.lower() or 'warn' in line.lower():
+                    msg_type = 'warning'
+                elif 'info' in line.lower() or 'debug' in line.lower():
+                    msg_type = 'info'
+                
+                yield f"data: {json.dumps({'type': msg_type, 'message': line, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        
+        process.wait()
+        
+        if process.returncode != 0:
+            error_msg = f'进程退出码: {process.returncode}'
+            logging.error(f'debug_ourmodel_stream: {error_msg}')
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        else:
+            yield f"data: {json.dumps({'type': 'done', 'message': '模型执行完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+            
+    except subprocess.TimeoutExpired:
+        if process:
+            kill_proc_tree(process.pid)
+        logging.error('debug_ourmodel_stream: 模型执行超时')
+        yield f"data: {json.dumps({'type': 'error', 'message': '模型执行超时', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+    except Exception as e:
+        if process:
+            kill_proc_tree(process.pid)
+        error_traceback = traceback.format_exc()
+        logging.error(f'debug_ourmodel_stream错误: {str(e)}\n{error_traceback}')
+        yield f"data: {json.dumps({'type': 'error', 'message': f'错误: {str(e)}', 'traceback': error_traceback, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+
+
+def debug_tripadvisermodel_stream(query: str):
+    """流式调用tripadvisermodel，实时输出stdout/stderr"""
+    process = None
+    try:
+        python_script = "../TravelPlanner-master/agents/tool_agents.py"
+        process = subprocess.Popen(
+            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # 合并stderr到stdout
+            text=True,
+            env=env,
+            shell=False,
+            bufsize=0,  # 无缓冲
+            universal_newlines=True
+        )
+        
+        # 实时读取输出
+        for line in iter(process.stdout.readline, ''):
+            if line:
+                line = line.rstrip()
+                # 判断消息类型
+                msg_type = 'stdout'
+                if 'error' in line.lower() or 'exception' in line.lower() or 'traceback' in line.lower():
+                    msg_type = 'error'
+                elif 'warning' in line.lower() or 'warn' in line.lower():
+                    msg_type = 'warning'
+                elif 'info' in line.lower() or 'debug' in line.lower():
+                    msg_type = 'info'
+                
+                yield f"data: {json.dumps({'type': msg_type, 'message': line, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        
+        process.wait()
+        
+        if process.returncode != 0:
+            error_msg = f'进程退出码: {process.returncode}'
+            logging.error(f'debug_tripadvisermodel_stream: {error_msg}')
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        else:
+            yield f"data: {json.dumps({'type': 'done', 'message': '模型执行完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+            
+    except subprocess.TimeoutExpired:
+        if process:
+            kill_proc_tree(process.pid)
+        logging.error('debug_tripadvisermodel_stream: 模型执行超时')
+        yield f"data: {json.dumps({'type': 'error', 'message': '模型执行超时', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+    except Exception as e:
+        if process:
+            kill_proc_tree(process.pid)
+        error_traceback = traceback.format_exc()
+        logging.error(f'debug_tripadvisermodel_stream错误: {str(e)}\n{error_traceback}')
+        yield f"data: {json.dumps({'type': 'error', 'message': f'错误: {str(e)}', 'traceback': error_traceback, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+
+
 
 @retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1.5, min=3, max=120))
 def ask_gptmodel(messages):
@@ -423,7 +590,7 @@ def ask_gptmodel(messages):
         return {"source": "gpt", "response": response}
     client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
     completion = client.chat.completions.create(
-        model="gpt-4o-plus",
+        model="gpt-5",
         messages=messages,
     )
     gpt_response = completion.choices[0].message.content
