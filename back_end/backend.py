@@ -65,7 +65,7 @@ MODEL_TIME_OUT_RESPONSE = {
         "Overall": None
     }
 }
-dotenv.load_dotenv()
+dotenv.load_dotenv(override=True)
 env = os.environ.copy()
 DEBUG = env.get('DEBUG') == 'True'
 # 初始化Flask
