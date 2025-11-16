@@ -19,6 +19,8 @@ function DevAdminPage() {
   const [output, setOutput] = useState([]);
   const [outputText, setOutputText] = useState(""); // 累积的原始输出文本
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedDays, setSelectedDays] = useState("3"); // 默认3天
+  const [exampleQuery, setExampleQuery] = useState(""); // 示例query模板
   const outputEndRef = useRef(null);
   const eventSourceRef = useRef(null);
 
@@ -167,6 +169,52 @@ function DevAdminPage() {
     setOutputText("");
   };
 
+  // 生成日期范围（从明天开始）
+  const generateDateRange = (days) => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const endDate = new Date(tomorrow);
+    endDate.setDate(endDate.getDate() + parseInt(days) - 1);
+    
+    const formatDate = (date) => {
+      const months = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = months[date.getMonth()];
+      const day = date.getDate();
+      const year = date.getFullYear();
+      
+      // 获取日期后缀
+      let suffix = 'th';
+      if (day === 1 || day === 21 || day === 31) suffix = 'st';
+      else if (day === 2 || day === 22) suffix = 'nd';
+      else if (day === 3 || day === 23) suffix = 'rd';
+      
+      return `${month} ${day}${suffix}, ${year}`;
+    };
+    
+    return {
+      startDate: formatDate(tomorrow),
+      endDate: formatDate(endDate),
+      startDateShort: tomorrow.toISOString().split('T')[0], // YYYY-MM-DD格式
+      endDateShort: endDate.toISOString().split('T')[0]
+    };
+  };
+
+  // 生成示例query
+  const generateExampleQuery = (days) => {
+    const dates = generateDateRange(days);
+    const template = `Could you please arrange a ${days}-day trip for two, starting in Sacramento and heading to Atlanta, from ${dates.startDate} to ${dates.endDate}. The budget for this trip is $4,700, and we require accommodations where parties are allowed.`;
+    return template;
+  };
+
+  // 应用示例query到输入框
+  const handleApplyExample = () => {
+    const generatedQuery = generateExampleQuery(selectedDays);
+    setQuery(generatedQuery);
+    setExampleQuery(generatedQuery);
+  };
+
   return (
     <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-2 min-h-screen">
       <div className="w-full mx-auto">
@@ -176,6 +224,43 @@ function DevAdminPage() {
             <p className="text-gray-400">实时调试和监控模型输出</p>
           </CardHeader>
           <CardBody className="gap-4">
+            {/* 示例Query生成区域 */}
+            <div className="flex flex-col gap-3 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+              <div className="text-sm font-semibold text-gray-300 mb-2">快速生成示例Query</div>
+              <div className="flex gap-3 items-end flex-wrap">
+                <Select
+                  label="选择天数"
+                  selectedKeys={[selectedDays]}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0];
+                    setSelectedDays(selected);
+                  }}
+                  className="w-32"
+                  classNames={{
+                    trigger: "bg-gray-700 border-gray-600",
+                    label: "text-gray-300"
+                  }}
+                >
+                  {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
+                    <SelectItem key={String(day)} value={String(day)}>
+                      {day} 天
+                    </SelectItem>
+                  ))}
+                </Select>
+                <Button
+                  color="secondary"
+                  variant="flat"
+                  onClick={handleApplyExample}
+                  className="min-w-24"
+                >
+                  生成并应用
+                </Button>
+                <div className="text-xs text-gray-400 ml-auto">
+                  日期范围: {generateDateRange(selectedDays).startDateShort} 至 {generateDateRange(selectedDays).endDateShort}
+                </div>
+              </div>
+            </div>
+
             {/* 输入区域 */}
             <div className="flex flex-col gap-4">
               <Textarea
