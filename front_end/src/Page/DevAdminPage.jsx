@@ -17,6 +17,7 @@ function DevAdminPage() {
   const [query, setQuery] = useState("");
   const [selectedModel, setSelectedModel] = useState("gpt");
   const [output, setOutput] = useState([]);
+  const [outputText, setOutputText] = useState(""); // 累积的原始输出文本
   const [isRunning, setIsRunning] = useState(false);
   const outputEndRef = useRef(null);
   const eventSourceRef = useRef(null);
@@ -28,7 +29,7 @@ function DevAdminPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [output]);
+  }, [outputText, output]);
 
   // 清理函数
   useEffect(() => {
@@ -41,7 +42,13 @@ function DevAdminPage() {
 
   // 添加输出消息
   const addOutputMessage = (type, message, timestamp, traceback = null) => {
-    setOutput(prev => [...prev, { type, message, timestamp, traceback }]);
+    // 累积原始输出文本，保持原始格式（包括换行符）
+    setOutputText(prev => prev + message);
+    
+    // 同时保存结构化数据用于错误堆栈显示
+    if (traceback || type === 'error') {
+      setOutput(prev => [...prev, { type, message, timestamp, traceback }]);
+    }
   };
 
   // 获取消息颜色样式
@@ -75,6 +82,7 @@ function DevAdminPage() {
 
     // 清空之前的输出
     setOutput([]);
+    setOutputText("");
     setIsRunning(true);
 
     try {
@@ -156,10 +164,11 @@ function DevAdminPage() {
   // 清空输出
   const handleClear = () => {
     setOutput([]);
+    setOutputText("");
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-2">
+    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-2 min-h-screen">
       <div className="w-full mx-auto">
         <Card className="bg-gray-800/50 backdrop-blur-sm border border-gray-700">
           <CardHeader className="flex flex-col gap-2">
@@ -231,26 +240,23 @@ function DevAdminPage() {
             {/* 输出显示区域 */}
             <div className="mt-4">
               <div className="text-sm text-gray-400 mb-2">实时输出：</div>
-              <div className="bg-black rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
-                {output.length === 0 ? (
+              <div className="bg-black rounded-lg p-4 h-128 overflow-y-auto font-mono text-sm">
+                {outputText === "" ? (
                   <div className="text-gray-500 italic">等待输出...</div>
                 ) : (
-                  output.map((item, index) => (
-                    <div key={index} className="mb-1">
-                      <span className="text-gray-500 text-xs mr-2">
-                        [{new Date(item.timestamp).toLocaleTimeString()}]
-                      </span>
-                      <span className={getMessageStyle(item.type)}>
-                        {item.message}
-                      </span>
-                      {item.traceback && (
-                        <div className="ml-8 mt-1 text-red-300 text-xs whitespace-pre-wrap">
-                          {item.traceback}
-                        </div>
-                      )}
-                    </div>
-                  ))
+                  <pre className="whitespace-pre-wrap text-gray-300 m-0">
+                    {outputText}
+                  </pre>
                 )}
+                {/* 显示错误堆栈（如果有） */}
+                {output.filter(item => item.traceback).map((item, index) => (
+                  <div key={`error-${index}`} className="mt-2">
+                    <div className="text-red-400 font-bold">错误堆栈：</div>
+                    <div className="ml-4 mt-1 text-red-300 text-xs whitespace-pre-wrap">
+                      {item.traceback}
+                    </div>
+                  </div>
+                ))}
                 <div ref={outputEndRef} />
               </div>
             </div>

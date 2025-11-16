@@ -495,14 +495,15 @@ def debug_ourmodel_stream(query: str):
         # 实时读取输出
         for line in iter(process.stdout.readline, ''):
             if line:
-                line = line.rstrip()
-                # 判断消息类型
+                # 保留原始格式，不删除换行符
+                # 判断消息类型（基于整行内容）
                 msg_type = 'stdout'
-                if 'error' in line.lower() or 'exception' in line.lower() or 'traceback' in line.lower():
+                line_lower = line.lower()
+                if 'error' in line_lower or 'exception' in line_lower or 'traceback' in line_lower:
                     msg_type = 'error'
-                elif 'warning' in line.lower() or 'warn' in line.lower():
+                elif 'warning' in line_lower or 'warn' in line_lower:
                     msg_type = 'warning'
-                elif 'info' in line.lower() or 'debug' in line.lower():
+                elif 'info' in line_lower or 'debug' in line_lower:
                     msg_type = 'info'
                 
                 yield f"data: {json.dumps({'type': msg_type, 'message': line, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
@@ -548,14 +549,15 @@ def debug_tripadvisermodel_stream(query: str):
         # 实时读取输出
         for line in iter(process.stdout.readline, ''):
             if line:
-                line = line.rstrip()
-                # 判断消息类型
+                # 保留原始格式，不删除换行符
+                # 判断消息类型（基于整行内容）
                 msg_type = 'stdout'
-                if 'error' in line.lower() or 'exception' in line.lower() or 'traceback' in line.lower():
+                line_lower = line.lower()
+                if 'error' in line_lower or 'exception' in line_lower or 'traceback' in line_lower:
                     msg_type = 'error'
-                elif 'warning' in line.lower() or 'warn' in line.lower():
+                elif 'warning' in line_lower or 'warn' in line_lower:
                     msg_type = 'warning'
-                elif 'info' in line.lower() or 'debug' in line.lower():
+                elif 'info' in line_lower or 'debug' in line_lower:
                     msg_type = 'info'
                 
                 yield f"data: {json.dumps({'type': msg_type, 'message': line, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
