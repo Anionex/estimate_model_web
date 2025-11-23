@@ -30,7 +30,8 @@ Please collect transportation details about departure and return journey.Do not 
 Kushiro(cost: $25/person, rating:4.9); Visit the golden gate bridge(cost: free, rating:4.8); Take flight F92427(22:39-00:19, price: $244.63/person) back to San Francisco.
   - for accommodation use $/person/night for unit
   - for transportation, attractions, restaurants, use $/person for unit
-4. Do not fabricate information.
+4. Make full use of your budget (without exceeding it)
+5. Do not fabricate information.
 Recommend you to format the itinerary like this:
 <Itinerary:
 **Day N: Month Day, Year**
