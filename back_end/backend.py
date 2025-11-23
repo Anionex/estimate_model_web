@@ -35,6 +35,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, ".."))
 from utils.jsonify_chat_model import get_json_response
 
+is_windows = platform.system() == "Windows"
 MODEL_MAX_PROCESS_TIME = 1800
 MODEL_FAIL_TO_COMPLETE_RESPONSE = {
     "itinerary": "Model failed to complete the task.",
@@ -65,7 +66,7 @@ MODEL_TIME_OUT_RESPONSE = {
         "Overall": None
     }
 }
-dotenv.load_dotenv(override=True)
+dotenv.load_dotenv(os.path.join(os.path.dirname(__file__), '.env'), override=True)
 env = os.environ.copy()
 DEBUG = env.get('DEBUG') == 'True'
 # 初始化Flask
@@ -74,6 +75,7 @@ CORS(app)  # 允许跨域请求
 
 # 配置数据库
 if os.name == 'nt':
+    print("database uri: ", f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest")
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest"
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:{env.get('DB_PASSWORD')}@localhost/modeltest"
@@ -487,11 +489,11 @@ def debug_ourmodel_stream(query: str):
             stderr=subprocess.STDOUT,  # 合并stderr到stdout
             text=True,
             env=env,
-            shell=False,
+            shell=is_windows,
             bufsize=0,  # 无缓冲
             universal_newlines=True
         )
-        
+           
         # 实时读取输出
         for line in iter(process.stdout.readline, ''):
             if line:
@@ -541,7 +543,7 @@ def debug_tripadvisermodel_stream(query: str):
             stderr=subprocess.STDOUT,  # 合并stderr到stdout
             text=True,
             env=env,
-            shell=False,
+            shell=is_windows,
             bufsize=0,  # 无缓冲
             universal_newlines=True
         )
@@ -607,14 +609,17 @@ def ask_tripadvisermodel(messages) -> dict:
     try:
         query = messages
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
+        
+        print("exec command: ", ' '.join(['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query]))
         process = subprocess.Popen(
             ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             env=env,
-            shell=False  # 设置为False以避免shell解释
+            shell=is_windows  # 设置为False以避免shell解释
         )
+        
         
         try:
             stdout, stderr = process.communicate(timeout=MODEL_MAX_PROCESS_TIME)
@@ -665,7 +670,7 @@ def ask_ourmodel(messages) -> dict:
             stderr=subprocess.PIPE,
             text=True,
             env=env,
-            shell=False  # 设置为False以避免shell解释
+            shell=is_windows  # 设置为False以避免shell解释
         )
         
         try:
