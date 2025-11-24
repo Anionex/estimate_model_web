@@ -29,6 +29,9 @@ export default defineConfig({
     fs: {
       allow: [rootDir],
     },
+    allowedHosts: [
+      "*"
+    ],
   },
   build: {
     chunkSizeWarningLimit: 1000,
