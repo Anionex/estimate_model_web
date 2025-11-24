@@ -227,3 +227,4 @@ back_end/migrations
 misc/export_to_csv.py
 misc/calculate_ratings.py
 misc/buquan.py
+config.yaml

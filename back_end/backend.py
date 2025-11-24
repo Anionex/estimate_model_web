@@ -14,6 +14,7 @@ import dotenv
 import psutil  
 import signal
 import logging
+import yaml
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -34,6 +35,31 @@ import sys
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, ".."))
 from utils.jsonify_chat_model import get_json_response
+
+ROOT_DIR = os.path.dirname(current_dir)
+CONFIG_PATH = os.path.join(ROOT_DIR, "config.yaml")
+
+
+def load_app_config():
+    """Load YAML config with safe defaults."""
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as config_file:
+            return yaml.safe_load(config_file) or {}
+    except FileNotFoundError:
+        logging.warning("config.yaml not found at %s, falling back to defaults", CONFIG_PATH)
+    except yaml.YAMLError as exc:
+        logging.error("Failed to parse config.yaml: %s", exc)
+    return {}
+
+
+APP_CONFIG = load_app_config()
+BACKEND_CONFIG = APP_CONFIG.get("backend", {})
+BACKEND_HOST = BACKEND_CONFIG.get("host", "127.0.0.1")
+BACKEND_PORT = int(
+    BACKEND_CONFIG.get("port")
+    or os.getenv("BACKEND_PORT")
+    or 5000
+)
 
 is_windows = platform.system() == "Windows"
 MODEL_MAX_PROCESS_TIME = 1800
@@ -746,7 +772,12 @@ def save_model_output(query: str, stdout: str, stderr: str, model_name: str) -> 
 
 if __name__ == '__main__':
     # print(parse_query("Plan me a trip from Los Angeles to Phoenix from 1 May 2025 to 10 May2025 with a budget of 900 usd with a duration of 11 days"))
-    app.run(debug=DEBUG, threaded=True)
+    app.run(
+        debug=DEBUG,
+        threaded=True,
+        host=BACKEND_HOST,
+        port=BACKEND_PORT
+    )
 
 
 

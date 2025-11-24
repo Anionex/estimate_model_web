@@ -25,3 +25,4 @@ flask_sqlalchemy
 pymysql
 json5
 diskcache
+pyyaml
