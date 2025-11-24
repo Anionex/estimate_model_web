@@ -101,10 +101,10 @@ CORS(app)  # 允许跨域请求
 
 # 配置数据库
 if os.name == 'nt':
-    print("database uri: ", f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest")
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest"
+    print("database uri: ", f"mysql+pymysql://{env.get('DB_USER') or "root"}:{env.get('DB_PASSWORD')}@localhost/modeltest")
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{env.get('DB_USER') or "root"}:{env.get('DB_PASSWORD')}@localhost/modeltest"
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:{env.get('DB_PASSWORD')}@localhost/modeltest"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{env.get('DB_USER') or "modeltest"}:{env.get('DB_PASSWORD')}@localhost/modeltest"
 
 # tmp
 # app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@172.30.192.1/modeltest"
