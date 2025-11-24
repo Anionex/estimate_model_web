@@ -19,6 +19,8 @@ const appConfig = (() => {
 const frontendConfig = appConfig.frontend || {}
 const frontendHost = frontendConfig.host || '127.0.0.1'
 const frontendPort = frontendConfig.port || 5173
+const frontendAllowedHosts = frontendConfig.allowed_hosts || []
+const resolvedAllowedHosts = frontendAllowedHosts.length > 0 ? frontendAllowedHosts : undefined
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -29,9 +31,7 @@ export default defineConfig({
     fs: {
       allow: [rootDir],
     },
-    allowedHosts: [
-      "*"
-    ],
+    allowedHosts: resolvedAllowedHosts,
   },
   build: {
     chunkSizeWarningLimit: 1000,

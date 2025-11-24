@@ -1,6 +1,9 @@
 frontend:
   host: "127.0.0.1"
   port: 5173
+  allowed_hosts:
+    - "127.0.0.1"
+    - "localhost"
 
 backend:
   host: "127.0.0.1"
