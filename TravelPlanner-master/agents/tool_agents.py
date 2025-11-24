@@ -85,8 +85,8 @@ class ReactAgent:
                  max_steps: int = 300,
                  max_retries: int = 5,
                  illegal_early_stop_patience: int = 30,
-                 react_llm_name = 'gpt-4o',
-                 planner_llm_name = 'gpt-4o',
+                 react_llm_name = 'glm-4.6',
+                 planner_llm_name = 'glm-4.6',
                 #  logs_path = '../logs/',
                  city_file_path = '../database/background/citySet.txt'
                  ) -> None: 
@@ -794,7 +794,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Process travel planning queries.")
     parser.add_argument("--set_type", type=str, default="validation", help="Set type: validation or test")
-    parser.add_argument("--model_name", type=str, default="gpt-4o", help="Model name to use")
+    parser.add_argument("--model_name", type=str, default="glm-4.6", help="Model name to use")
     parser.add_argument("--output_dir", type=str, default="./", help="Output directory for results")
     parser.add_argument('input_data', type=str, help="The input query to process")
     

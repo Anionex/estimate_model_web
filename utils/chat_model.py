@@ -102,7 +102,7 @@ class OpenAIChat():
 
 if __name__ == '__main__':
 
-    model = OpenAIChat(model='gpt-4o', temperature=0, stop=['\n'])
+    model = OpenAIChat(model='glm-4.6', temperature=0, stop=['\n'])
     # print(model.chat('输出一个唐诗', [])[0])
     # print(model.create_assistant_completion('山重水复疑无路, 柳暗花明又一', '你是一个诗人'))
     # 测试流式输出
