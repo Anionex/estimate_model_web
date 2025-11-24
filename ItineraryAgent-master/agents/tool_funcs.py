@@ -3,7 +3,7 @@ import json
 import sys
 import requests
 import dotenv
-dotenv.load_dotenv()
+dotenv.load_dotenv(os.path.join(os.path.dirname(__file__), "../../back_end/",  ".env"))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, root_dir)
