@@ -79,6 +79,9 @@ if os.name == 'nt':
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@localhost/modeltest"
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://modeltest:{env.get('DB_PASSWORD')}@localhost/modeltest"
+
+# tmp
+# app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{env.get('DB_PASSWORD')}@172.30.192.1/modeltest"
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -441,7 +444,7 @@ def debug_model():
                 
                 client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
                 stream = client.chat.completions.create(
-                    model="gpt-5",
+                    model=env.get("GPT_BASELINE"),
                     messages=messages,
                     stream=True
                 )
@@ -594,7 +597,7 @@ def ask_gptmodel(messages):
         return {"source": "gpt", "response": response}
     client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
     completion = client.chat.completions.create(
-        model="gpt-5",
+        model=env.get("GPT_BASELINE"),
         messages=messages,
     )
     gpt_response = completion.choices[0].message.content
