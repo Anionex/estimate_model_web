@@ -13,7 +13,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def get_openai_response(system_prompt: str, user_prompt: str, output_format: dict):
-    from langfuse.openai import OpenAI
+    from openai import OpenAI
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), base_url=os.getenv('OPENAI_API_BASE'))
     return client.chat.completions.create(
         model='gpt-4o',
