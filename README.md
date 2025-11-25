@@ -101,7 +101,7 @@ git clone https://github.com/Anionex/estimate_model_web
 cd estimate_model_web
 
 # 创建并激活Conda环境
-conda create -n estimate_web python=3.9
+conda create -n estimate_web python=3.9 -y 
 conda activate estimate_web
 
 # 安装Python依赖
@@ -119,6 +119,18 @@ CREATE DATABASE modeltest;
 CREATE USER 'modeltest'@'localhost' IDENTIFIED BY 'root';
 GRANT ALL PRIVILEGES ON modeltest.* TO 'modeltest'@'localhost';
 FLUSH PRIVILEGES;
+```
+
+**初始化数据库表（重要！）**
+
+数据库表不会自动创建，需要手动初始化。有两种方式：
+
+**方式1：使用Flask-Migrate手动初始化**
+
+```bash
+cd back_end
+export FLASK_APP=backend.py
+flask db upgrade
 ```
 
 ### 3. 环境变量配置
