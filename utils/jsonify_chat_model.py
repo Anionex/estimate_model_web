@@ -16,7 +16,7 @@ def get_openai_response(system_prompt: str, user_prompt: str, output_format: dic
     from openai import OpenAI
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), base_url=os.getenv('OPENAI_API_BASE'))
     return client.chat.completions.create(
-        model='glm-4.6',
+        model='gpt-4o',
         temperature = 0,
         messages=[
             {"role": "system", "content": JSON_RESPONSE_PROMPT_TEMPLATE.format(system_prompt=system_prompt,output_format=output_format)},

@@ -108,7 +108,7 @@ def count_poi(response):
 
 class PlanChecker:
     def __init__(self, **kwargs) -> None: 
-        kwargs['model'] = kwargs.get('model', 'glm-4.6')
+        kwargs['model'] = kwargs.get('model', 'gpt-4o')
         kwargs['temperature'] = kwargs.get('temperature', 0)
         kwargs['is_verbose'] = True
         self.kwargs = kwargs
@@ -140,7 +140,7 @@ class PlanChecker:
         # 之前上下文不用了
         history = []
         self.expense_info = calculate_budget(response)
-        self.model.kwargs['model'] = 'glm-4.6'
+        self.model.kwargs['model'] = 'gpt-4o'
         response, history = self.model.chat(prompt=JUDGE_BUDGET_PROMPT.format(
             plan=plan,
             expense_info="\n"+str(self.expense_info),
@@ -168,7 +168,7 @@ class PlanChecker:
         history = []
         sys_prompt = self.build_system_input(query, extra_requirements, check_stage='reasonability')
         
-        self.model.kwargs['model'] = 'glm-4.6'
+        self.model.kwargs['model'] = 'gpt-4o'
         response, history = self.model.chat(
             prompt=ANALYZE_REASONABILITY_PROMPT_NL.format(plan=plan, query=query, current_date=datetime.now().strftime("%Y-%m-%d")), 
             history=history, 
@@ -205,7 +205,7 @@ class PlanChecker:
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def _rating_summary(self, plan):
-        self.model.kwargs['model'] = 'glm-4.6'
+        self.model.kwargs['model'] = 'gpt-4o'
         response, _ = self.model.chat(prompt=f"Here is the itinerary:\n{plan}",
                                             history=[],
                                             meta_instruction=RATING_SUMMARY_SYSTEM_PROMPT)

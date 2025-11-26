@@ -17,7 +17,7 @@ prompt = hub.pull("hwchase17/react")
 class SearchAgent:
     def __init__(self):
         # Choose the LLM to use
-        llm = ChatOpenAI(model="glm-4.6")
+        llm = ChatOpenAI(model="gpt-4o")
 
         # Construct the ReAct agent
         agent = create_react_agent(llm, tools, prompt)

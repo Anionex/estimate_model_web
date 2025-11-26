@@ -34,7 +34,7 @@ ANSWER_HEADER = "<Itinerary:"
 class ReactAgent:
     def __init__(self, **kwargs) -> None: 
         self.tools = Tools()
-        kwargs['model'] = kwargs.get('model', 'glm-4.6')
+        kwargs['model'] = kwargs.get('model', 'gpt-4o')
         kwargs['stop'] = kwargs.get('stop', ['\n'])
         kwargs['temperature'] = kwargs.get('temperature', 0)
         self.kwargs = kwargs

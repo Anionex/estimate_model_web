@@ -13,7 +13,7 @@ from tool_funcs import *
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, root_dir)
 from utils.config import *
-planner_two_stage_in_one = ReactAgent(model="glm-4.6", stop=['>']) # import this
+planner_two_stage_in_one = ReactAgent(model="gpt-4o", stop=['>']) # import this
 
 
 # planner_two_stage_in_one.tools.add_tool(
