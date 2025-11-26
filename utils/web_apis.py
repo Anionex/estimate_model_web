@@ -117,7 +117,7 @@ def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOB
                         index += 1
                         str_answer += f"{index}. {hotel_name}, price for {adults} adults: {price} {currency}, rating: {rating}\n"
             except ResponseError as error:
-                # print(f"获取酒店 {hotel_id} 的信息时发生错误: {error}")
+                print(f"获取酒店 {hotel_id} 的信息时发生错误: {error}")
                 pass
 
         if str_answer == "":
