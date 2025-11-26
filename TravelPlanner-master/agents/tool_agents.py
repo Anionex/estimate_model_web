@@ -117,7 +117,7 @@ class ReactAgent:
                      openai_api_key=OPENAI_API_KEY,
                      model_kwargs={"stop": stop_list})
             
-        elif 'gpt-4' in react_llm_name:
+        elif 'gpt-4' in react_llm_name or 'glm' in react_llm_name:
             stop_list = ['\n']
             self.max_token_length = 30000
             self.llm = ChatOpenAI(temperature=0,
