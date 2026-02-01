@@ -70,6 +70,7 @@ function HomePage() {
   const [conversationId, setConversationId] = useState(null);
   const [newMessage, setNewMessage] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
   const [ratings, setRatings] = useState({
     gpt: {
       levelOfDetails: null,
@@ -101,6 +102,24 @@ function HomePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 请求通知权限（需要用户交互触发）
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+    }
+  };
+
+  // 发送系统通知
+  const sendNotification = (title, body) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, {
+        body: body,
+        icon: '/favicon.ico'
+      });
+    }
+  };
+
   const handleInputChange = (e) => {
     setInput(e.target.value);
   };
@@ -110,6 +129,9 @@ function HomePage() {
     if (input.trim() === "") return;
 
     setIsSubmitting(true);
+
+    // 在用户交互时请求通知权限
+    await requestNotificationPermission();
 
     const systemMessage = {"role": "system", "content": "You are a professional itinerary planner. Output the itinerary based on the user's request directly, do not ask for any additional information."};
     const userMessage = {"role": "user", "content": input};
@@ -219,6 +241,8 @@ function HomePage() {
 
     try {
       await Promise.allSettled(taskPromises);
+      // 所有任务完成后发送系统通知
+      sendNotification('生成完成', '三个计划都已生成完毕，请查看结果并进行评分。');
     } catch (error) {
       console.error("Error in fetchAllModelResponses:", error);
     }
