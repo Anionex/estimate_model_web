@@ -100,12 +100,8 @@ estimate_model_web/
 git clone https://github.com/Anionex/estimate_model_web
 cd estimate_model_web
 
-# 创建并激活Conda环境
-conda create -n estimate_web python=3.9 -y 
-conda activate estimate_web
-
-# 安装Python依赖
-pip install -r requirements.txt
+# 安装Python依赖（使用uv）
+uv sync
 ```
 
 ### 2. 数据库配置

@@ -1,0 +1,8 @@
+[project]
+name = "estimate-model-web"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain>=1.2.7",
+]
