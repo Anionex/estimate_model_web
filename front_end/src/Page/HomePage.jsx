@@ -170,74 +170,103 @@ function HomePage() {
     setourmodelLoading(true);
     setxxmodelLoading(true);
 
-    const modelRequests = [
+    const modelConfigs = [
       // GPT请求
       {
-        request: axios.post(ApiUtill.url_root + ApiUtill.url_gpt, {
-          query: newMessage.gpt,
-          conversation_id: conversationId,
-        }),
-        type: 'gpt',
+        model_type: 'gpt',
+        query: newMessage.gpt,
         setLoading: setgptLoading,
         setMessages: setgptMessages,
+        responseKey: 'gpt_response',
       },
       // Our model请求
       {
-        request: axios.post(ApiUtill.url_root + ApiUtill.url_ourmodel, {
-          query: newMessage.ourmodel,
-          conversation_id: conversationId,
-        }),
-        type: 'ourmodel',
+        model_type: 'ourmodel',
+        query: newMessage.ourmodel,
         setLoading: setourmodelLoading,
         setMessages: setourmodelMessages,
+        responseKey: 'our_response',
       },
       // XX model请求
       {
-        request: axios.post(ApiUtill.url_root + ApiUtill.url_xxmodel, {
-          query: newMessage.xxmodel,
-          conversation_id: conversationId,
-        }),
-        type: 'xxmodel',
+        model_type: 'xxmodel',
+        query: newMessage.xxmodel,
         setLoading: setxxmodelLoading,
         setMessages: setxxmodelMessages,
+        responseKey: 'xxmodel_response',
       }
     ];
 
-    const requests = modelRequests.map(async ({ request, type, setLoading, setMessages }) => {
+    // Submit all tasks and start polling
+    const taskPromises = modelConfigs.map(async (config) => {
       try {
-        const response = await request;
-        const responseData = response.data;
-        
-        // 根据不同模型类型处理响应数据
-        const messageContent = {
-          gpt: responseData.gpt_response,
-          ourmodel: responseData.our_response,
-          xxmodel: responseData.xxmodel_response,
-        }[type];
+        // Submit task and get task_id
+        const submitResponse = await axios.post(ApiUtill.url_root + ApiUtill.url_submit_task, {
+          model_type: config.model_type,
+          query: config.query,
+          conversation_id: conversationId,
+        });
 
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            role: "assistant",
-            content: messageContent,
-            accommodationRating: responseData.accommodationRating,
-            restaurantAvgRating: responseData.restaurantAvgRating,
-            attractionsAvgRating: responseData.attractionsAvgRating,
-            overallRating: responseData.overall_rating
-          }
-        ]);
+        const taskId = submitResponse.data.task_id;
+
+        // Start polling for this task
+        await pollTaskStatus(taskId, config);
       } catch (error) {
-        console.error(`Error fetching ${type} response:`, error);
-      } finally {
-        setLoading(false);
+        console.error(`Error submitting ${config.model_type} task:`, error);
+        config.setLoading(false);
       }
     });
 
     try {
-      await Promise.allSettled(requests);
+      await Promise.allSettled(taskPromises);
     } catch (error) {
       console.error("Error in fetchAllModelResponses:", error);
     }
+  };
+
+  const pollTaskStatus = (taskId, config) => {
+    const { model_type, setLoading, setMessages, responseKey } = config;
+
+    return new Promise((resolve) => {
+      const interval = setInterval(async () => {
+        try {
+          const res = await axios.get(ApiUtill.url_root + ApiUtill.url_task_status + '/' + taskId);
+          const { status, result, error } = res.data;
+
+          if (status === 'completed') {
+            clearInterval(interval);
+
+            const messageContent = result[responseKey];
+
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                role: "assistant",
+                content: messageContent,
+                accommodationRating: result.accommodationRating,
+                restaurantAvgRating: result.restaurantAvgRating,
+                attractionsAvgRating: result.attractionsAvgRating,
+                overallRating: result.overall_rating
+              }
+            ]);
+
+            setLoading(false);
+            resolve();
+          } else if (status === 'failed') {
+            clearInterval(interval);
+            console.error(`Task ${model_type} failed:`, error);
+            setLoading(false);
+            resolve();
+          }
+          // If status is 'pending' or 'running', continue polling
+        } catch (error) {
+          console.error(`Error polling ${model_type} task status:`, error);
+          clearInterval(interval);
+          setLoading(false);
+          resolve();
+        }
+      }, 3000); // Poll every 3 seconds
+    });
   };
   
 

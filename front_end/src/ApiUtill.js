@@ -21,4 +21,6 @@ export default class ApiUtill{
     static url_ourmodel="ask_ourmodel"
     static url_xxmodel="ask_xxmodel"
     static url_rating="rate"
+    static url_submit_task="submit_task"
+    static url_task_status="task_status"
 }

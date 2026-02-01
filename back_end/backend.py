@@ -28,7 +28,12 @@ logging.basicConfig(
 import platform
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+import uuid
 executor = ThreadPoolExecutor(max_workers=10)
+
+# Task storage for async polling mechanism
+# {task_id: {status: "pending"|"running"|"completed"|"failed", result: {...}, error: str, model_type: str}}
+tasks = {}
 from flask_migrate import Migrate
 import hashlib  # 添加到文件顶部的导入部分
 import sys
@@ -240,13 +245,188 @@ def parse_query(query) -> dict:
         "departure_date": string,  // date in "YYYY-MM-DD" or "Not specified"
         "return_date": string,  // date in "YYYY-MM-DD" or "Not specified"
         "duration": number  // number of days, 如果输入中有指定，直接填写，否则填写为return date - departure date + 1的计算结果,remember to add 1
-    }    
+    }
     """)
     return get_json_response(system_prompt=f"Your task is to parse the given itinerary planning request.current year: {datetime.now().year}.",
                              user_prompt=query,
                              output_format=output_format)
 
 
+# ============ Async Task Polling Endpoints ============
+
+@app.route('/submit_task', methods=['POST'])
+def submit_task():
+    """
+    Submit a task for async processing.
+    Returns task_id immediately, task runs in background.
+    """
+    data = request.json
+    model_type = data.get('model_type')  # 'gpt', 'ourmodel', 'xxmodel'
+    query = data.get('query')
+    conversation_id = data.get('conversation_id')
+
+    if model_type not in ['gpt', 'ourmodel', 'xxmodel']:
+        return jsonify({'error': 'Invalid model_type'}), 400
+
+    task_id = str(uuid.uuid4())
+    tasks[task_id] = {
+        'status': 'pending',
+        'result': None,
+        'error': None,
+        'model_type': model_type
+    }
+
+    # Submit task to thread pool
+    executor.submit(execute_task, task_id, model_type, query, conversation_id)
+
+    return jsonify({'task_id': task_id})
+
+
+@app.route('/task_status/<task_id>', methods=['GET'])
+def task_status(task_id):
+    """
+    Query task status and result.
+    Returns: {status: "pending"|"running"|"completed"|"failed", result?: {...}, error?: str}
+    """
+    if task_id not in tasks:
+        return jsonify({'error': 'Task not found'}), 404
+
+    task = tasks[task_id]
+    response = {'status': task['status']}
+
+    if task['status'] == 'completed':
+        response['result'] = task['result']
+    elif task['status'] == 'failed':
+        response['error'] = task['error']
+
+    return jsonify(response)
+
+
+def execute_task(task_id, model_type, query, conversation_id):
+    """
+    Execute model task in background thread.
+    Updates tasks dict with result or error.
+    """
+    tasks[task_id]['status'] = 'running'
+
+    # Ensure conversation_id is int
+    if conversation_id is not None:
+        try:
+            conversation_id = int(conversation_id)
+        except (ValueError, TypeError):
+            logging.error(f"Task {task_id}: Invalid conversation_id: {conversation_id}")
+            conversation_id = None
+
+    try:
+        # Run model OUTSIDE app context (long-running operation)
+        if model_type == 'gpt':
+            messages = query
+            result = ask_gptmodel(messages)
+            gpt_response = result['response']
+
+            # Extract ratings from response
+            accommodation_rating = re.search(r'Accommodation Rating: (\d)/5', gpt_response)
+            attractions_rating = re.search(r'Attractions Average Rating: (\d)/5', gpt_response)
+            restaurant_rating = re.search(r'Restaurant Average Rating: (\d)/5', gpt_response)
+            overall_rating = re.search(r'Overall Rating: (\d)/5', gpt_response)
+
+            tasks[task_id]['result'] = {
+                'gpt_response': gpt_response,
+                'attractionsAvgRating': attractions_rating.group(1) if attractions_rating else None,
+                'restaurantAvgRating': restaurant_rating.group(1) if restaurant_rating else None,
+                'accommodationRating': accommodation_rating.group(1) if accommodation_rating else None,
+                'overall_rating': overall_rating.group(1) if overall_rating else None,
+            }
+
+            # Save to database in fresh app context
+            if conversation_id:
+                with app.app_context():
+                    conversation = db.session.get(ModelEstimate, conversation_id)
+                    if conversation:
+                        conversation.gpt_response = gpt_response
+                        db.session.commit()
+                        logging.info(f"Task {task_id}: Saved GPT response to conversation {conversation_id}")
+                    else:
+                        logging.warning(f"Task {task_id}: Conversation {conversation_id} not found")
+
+        elif model_type == 'ourmodel':
+            messages = query
+            our_response = ask_ourmodel(messages)
+
+            our_response_content = our_response.get("itinerary")
+            our_response_rating = our_response.get("average_rating", {})
+            expense_info = our_response.get("expense_info", {})
+
+            tasks[task_id]['result'] = {
+                'our_response': our_response_content,
+                'attractionsAvgRating': our_response_rating.get("Attractions"),
+                'restaurantAvgRating': our_response_rating.get("Restaurants"),
+                'accommodationRating': our_response_rating.get("Accommodations"),
+                'overall_rating': our_response_rating.get("Overall"),
+                'expense_info': expense_info
+            }
+
+            # Save to database in fresh app context
+            if conversation_id:
+                with app.app_context():
+                    conversation = db.session.get(ModelEstimate, conversation_id)
+                    if conversation:
+                        conversation.our_response = our_response_content
+                        conversation.our_currency_unit = expense_info.get("Unit")
+                        conversation.our_transportation_cost = expense_info.get("Transportation")
+                        conversation.our_attractions_cost = expense_info.get("Attractions")
+                        conversation.our_accommodation_cost = expense_info.get("Accommodation")
+                        conversation.our_dining_cost = expense_info.get("Dining")
+                        conversation.our_total_cost = expense_info.get("Total")
+                        db.session.commit()
+                        logging.info(f"Task {task_id}: Saved ourmodel response to conversation {conversation_id}")
+                    else:
+                        logging.warning(f"Task {task_id}: Conversation {conversation_id} not found")
+
+        elif model_type == 'xxmodel':
+            messages = next(item["content"] for item in query if item["role"] == "user")
+            trip_response = ask_tripadvisermodel(messages)
+
+            trip_response_content = trip_response.get("itinerary", "something went wrong")
+            trip_response_rating = trip_response.get("average_rating", {})
+            expense_info = trip_response.get("expense_info", {})
+
+            tasks[task_id]['result'] = {
+                'xxmodel_response': trip_response_content,
+                'attractionsAvgRating': trip_response_rating.get("Attractions"),
+                'restaurantAvgRating': trip_response_rating.get("Restaurants"),
+                'accommodationRating': trip_response_rating.get("Accommodations"),
+                'overall_rating': trip_response_rating.get("Overall"),
+                'expense_info': expense_info
+            }
+
+            # Save to database in fresh app context
+            if conversation_id:
+                with app.app_context():
+                    conversation = db.session.get(ModelEstimate, conversation_id)
+                    if conversation:
+                        conversation.trip_response = trip_response_content
+                        conversation.trip_currency_unit = expense_info.get("Unit")
+                        conversation.trip_transportation_cost = expense_info.get("Transportation")
+                        conversation.trip_attractions_cost = expense_info.get("Attractions")
+                        conversation.trip_accommodation_cost = expense_info.get("Accommodation")
+                        conversation.trip_dining_cost = expense_info.get("Dining")
+                        conversation.trip_total_cost = expense_info.get("Total")
+                        db.session.commit()
+                        logging.info(f"Task {task_id}: Saved xxmodel response to conversation {conversation_id}")
+                    else:
+                        logging.warning(f"Task {task_id}: Conversation {conversation_id} not found")
+
+        tasks[task_id]['status'] = 'completed'
+
+    except Exception as e:
+        error_traceback = traceback.format_exc()
+        logging.error(f"Task {task_id} failed: {str(e)}\n{error_traceback}")
+        tasks[task_id]['status'] = 'failed'
+        tasks[task_id]['error'] = str(e)
+
+
+# ============ Original Sync Endpoints (kept for backward compatibility) ============
 
 @app.route('/ask_gpt', methods=['POST'])
 def ask_gpt():
