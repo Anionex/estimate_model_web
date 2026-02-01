@@ -64,7 +64,7 @@ amadeus = Client(
 )
 
 @disk_cache(expire=timedelta(days=30))
-def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOBAL_CURRENCY, rooms=1, language=GLOBAL_LANGUAGE, max_results=15, min_price: int = 0, max_price: int = INF):
+def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOBAL_CURRENCY, rooms=1, language=GLOBAL_LANGUAGE, max_results=50, min_price: int = 0, max_price: int = INF):
     try:
         # Translate first
         # city = translate_city(city)
@@ -104,15 +104,16 @@ def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOB
                     hotel_name = offer['hotel']['name']
                     price = offer['offers'][0]['price']['total']
                     
-                    # Get rating for each hotel separately
+                    # Get rating from Google Places API (Amadeus sentiment API often returns empty)
                     try:
-                        hotel_rating = amadeus.e_reputation.hotel_sentiments.get(
-                            hotelIds=hotel_id
-                        )
-                        # print(f"hotel_rating for {hotel_id}:", str(hotel_rating.data))
-                        rating = (float(hotel_rating.data[0]['overallRating']) / 20) if hotel_rating.data else "N/A"
-                    except ResponseError:
+                        places_result = gmaps.places(query=f"{hotel_name} {city}", type="lodging")
+                        if places_result.get('results') and places_result['results'][0].get('rating'):
+                            rating = places_result['results'][0]['rating']
+                        else:
+                            rating = "N/A"
+                    except Exception:
                         rating = "N/A"
+
                     if rating != "N/A":
                         index += 1
                         str_answer += f"{index}. {hotel_name}, price for {adults} adults: {price} {currency}, rating: {rating}\n"
