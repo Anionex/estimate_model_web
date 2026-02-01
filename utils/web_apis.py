@@ -64,30 +64,25 @@ amadeus = Client(
 )
 
 @disk_cache(expire=timedelta(days=30))
-def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOBAL_CURRENCY, rooms=1, language=GLOBAL_LANGUAGE, max_results=50, min_price: int = 0, max_price: int = INF):
+def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOBAL_CURRENCY, rooms=1, language=GLOBAL_LANGUAGE, max_results=50, max_return=15, min_price: int = 0, max_price: int = INF):
     try:
-        # Translate first
-        # city = translate_city(city)
         # get city code
         city_code = amadeus.reference_data.locations.get(
             keyword=city,
             subType=Location.ANY
         ).data[0]['iataCode']
-        # tmp
         print("the city code:", city_code)
+
         # Search for hotels in the city
         hotel_list = amadeus.reference_data.locations.hotels.by_city.get(
-            cityCode=city_code  # City's IATA code
+            cityCode=city_code
         )
 
         # Get the IDs of the first max_results hotels
         hotel_ids = [hotel['hotelId'] for hotel in hotel_list.data[:max_results]]
-        # print("hotel_ids:", hotel_ids)
-        
-        # Search for offers for these hotels
-        str_answer = ""
-        index = 0
-        for hotel_id in hotel_ids:
+
+        # Helper function to fetch hotel offer
+        def fetch_hotel_offer(hotel_id):
             try:
                 hotel_offer = amadeus.shopping.hotel_offers_search.get(
                     hotelIds=hotel_id,
@@ -101,25 +96,57 @@ def get_accommodations(city, check_in_date, check_out_date, adults,currency=GLOB
                 )
                 if hotel_offer.data:
                     offer = hotel_offer.data[0]
-                    hotel_name = offer['hotel']['name']
-                    price = offer['offers'][0]['price']['total']
-                    
-                    # Get rating from Google Places API (Amadeus sentiment API often returns empty)
-                    try:
-                        places_result = gmaps.places(query=f"{hotel_name} {city}", type="lodging")
-                        if places_result.get('results') and places_result['results'][0].get('rating'):
-                            rating = places_result['results'][0]['rating']
-                        else:
-                            rating = "N/A"
-                    except Exception:
-                        rating = "N/A"
-
-                    if rating != "N/A":
-                        index += 1
-                        str_answer += f"{index}. {hotel_name}, price for {adults} adults: {price} {currency}, rating: {rating}\n"
+                    return {
+                        'hotel_id': hotel_id,
+                        'hotel_name': offer['hotel']['name'],
+                        'price': float(offer['offers'][0]['price']['total'])
+                    }
             except ResponseError as error:
                 print(f"获取酒店 {hotel_id} 的信息时发生错误: {error}")
+            return None
+
+        # Helper function to fetch rating from Google Places
+        def fetch_rating(hotel_info):
+            if hotel_info is None:
+                return None
+            try:
+                places_result = gmaps.places(query=f"{hotel_info['hotel_name']} {city}", type="lodging")
+                if places_result.get('results') and places_result['results'][0].get('rating'):
+                    hotel_info['rating'] = places_result['results'][0]['rating']
+                    return hotel_info
+            except Exception:
                 pass
+            return None
+
+        # Parallel fetch hotel offers
+        hotels_with_offers = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(fetch_hotel_offer, hid): hid for hid in hotel_ids}
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    hotels_with_offers.append(result)
+                # Stop early if we have enough candidates
+                if len(hotels_with_offers) >= max_return * 2:
+                    break
+
+        # Parallel fetch ratings
+        hotels_with_ratings = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(fetch_rating, h): h for h in hotels_with_offers}
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    hotels_with_ratings.append(result)
+                # Stop early if we have enough results
+                if len(hotels_with_ratings) >= max_return:
+                    break
+
+        # Sort by price and format output
+        hotels_with_ratings.sort(key=lambda x: x['price'])
+        str_answer = ""
+        for index, hotel in enumerate(hotels_with_ratings[:max_return], 1):
+            str_answer += f"{index}. {hotel['hotel_name']}, price for {adults} adults: {hotel['price']} {currency}, rating: {hotel['rating']}\n"
 
         if str_answer == "":
             return f"There are no accommodations found in {city} from {check_in_date} to {check_out_date}."
