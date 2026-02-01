@@ -21,8 +21,11 @@ function DevAdminPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [selectedDays, setSelectedDays] = useState("3"); // 默认3天
   const [exampleQuery, setExampleQuery] = useState(""); // 示例query模板
+  const [elapsedTime, setElapsedTime] = useState(0); // 当前耗时
+  const [totalElapsed, setTotalElapsed] = useState(null); // 总耗时
   const outputEndRef = useRef(null);
   const eventSourceRef = useRef(null);
+  const timerRef = useRef(null);
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -39,14 +42,25 @@ function DevAdminPage() {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, []);
 
   // 添加输出消息
-  const addOutputMessage = (type, message, timestamp, traceback = null) => {
+  const addOutputMessage = (type, message, timestamp, traceback = null, elapsed = null, total_elapsed = null) => {
+    // 更新耗时信息
+    if (elapsed !== null) {
+      setElapsedTime(elapsed);
+    }
+    if (total_elapsed !== null) {
+      setTotalElapsed(total_elapsed);
+    }
+
     // 累积原始输出文本，保持原始格式（包括换行符）
     setOutputText(prev => prev + message);
-    
+
     // 同时保存结构化数据用于错误堆栈显示
     if (traceback || type === 'error') {
       setOutput(prev => [...prev, { type, message, timestamp, traceback }]);
@@ -86,6 +100,14 @@ function DevAdminPage() {
     setOutput([]);
     setOutputText("");
     setIsRunning(true);
+    setElapsedTime(0);
+    setTotalElapsed(null);
+
+    // 启动本地计时器
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedTime(((Date.now() - startTime) / 1000).toFixed(1));
+    }, 100);
 
     try {
       // 使用 fetch 来处理 SSE 流
@@ -110,7 +132,7 @@ function DevAdminPage() {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
           break;
         }
@@ -127,7 +149,9 @@ function DevAdminPage() {
                 data.type,
                 data.message,
                 data.timestamp,
-                data.traceback
+                data.traceback,
+                data.elapsed,
+                data.total_elapsed
               );
             } catch (e) {
               console.error('解析SSE数据失败:', e, line);
@@ -144,7 +168,9 @@ function DevAdminPage() {
             data.type,
             data.message,
             data.timestamp,
-            data.traceback
+            data.traceback,
+            data.elapsed,
+            data.total_elapsed
           );
         } catch (e) {
           console.error('解析SSE数据失败:', e);
@@ -160,6 +186,10 @@ function DevAdminPage() {
       );
     } finally {
       setIsRunning(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
   };
 
@@ -167,6 +197,8 @@ function DevAdminPage() {
   const handleClear = () => {
     setOutput([]);
     setOutputText("");
+    setElapsedTime(0);
+    setTotalElapsed(null);
   };
 
   // 生成日期范围（从明天开始）
@@ -324,7 +356,21 @@ function DevAdminPage() {
 
             {/* 输出显示区域 */}
             <div className="mt-4">
-              <div className="text-sm text-gray-400 mb-2">实时输出：</div>
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-sm text-gray-400">实时输出：</div>
+                <div className="flex gap-4 text-sm">
+                  {isRunning && (
+                    <span className="text-yellow-400">
+                      运行中: {elapsedTime}s
+                    </span>
+                  )}
+                  {totalElapsed !== null && (
+                    <span className="text-green-400">
+                      总耗时: {totalElapsed}s
+                    </span>
+                  )}
+                </div>
+              </div>
               <div className="bg-black rounded-lg p-4 h-128 overflow-y-auto font-mono text-sm">
                 {outputText === "" ? (
                   <div className="text-gray-500 italic">等待输出...</div>

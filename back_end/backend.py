@@ -452,8 +452,22 @@ def debug_model():
     data = request.json
     query = data.get('query', '')
     model_name = data.get('model', 'gpt')  # gpt, ourmodel, xxmodel
-    
+
     def generate():
+        start_time = time.time()
+
+        def make_message(msg_type, message, **kwargs):
+            """生成带耗时信息的消息"""
+            elapsed = round(time.time() - start_time, 2)
+            data = {
+                'type': msg_type,
+                'message': message,
+                'timestamp': datetime.now().isoformat(),
+                'elapsed': elapsed,  # 当前已耗时（秒）
+                **kwargs
+            }
+            return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
         try:
             if model_name == 'gpt':
                 # GPT模型使用流式API
@@ -461,59 +475,72 @@ def debug_model():
                     {"role": "system", "content": "You are a professional itinerary planner. Output the itinerary based on the user's request directly, do not ask for any additional information."},
                     {"role": "user", "content": query}
                 ]
-                yield f"data: {json.dumps({'type': 'info', 'message': '开始调用GPT模型...', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                
+                yield make_message('info', '开始调用GPT模型...')
+
                 if DEBUG:
-                    yield f"data: {json.dumps({'type': 'stdout', 'message': 'test response', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                    yield f"data: {json.dumps({'type': 'done', 'message': '完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+                    yield make_message('stdout', 'test response')
+                    yield make_message('done', '完成', total_elapsed=round(time.time() - start_time, 2))
                     return
-                
+
                 client = OpenAI(api_key=env.get('OPENAI_API_KEY'), base_url=env.get('OPENAI_API_BASE'))
                 stream = client.chat.completions.create(
                     model=env.get("GPT_BASELINE"),
                     messages=messages,
                     stream=True
                 )
-                
+
                 for chunk in stream:
                     if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content:
                         content = chunk.choices[0].delta.content
-                        yield f"data: {json.dumps({'type': 'stdout', 'message': content, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                
-                yield f"data: {json.dumps({'type': 'done', 'message': '完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                
+                        yield make_message('stdout', content)
+
+                yield make_message('done', '完成', total_elapsed=round(time.time() - start_time, 2))
+
             elif model_name == 'ourmodel':
-                yield f"data: {json.dumps({'type': 'info', 'message': '开始调用Our Model...', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                for chunk in debug_ourmodel_stream(query):
+                yield make_message('info', '开始调用Our Model...')
+                for chunk in debug_ourmodel_stream(query, start_time):
                     yield chunk
-                    
+
             elif model_name == 'xxmodel':
-                yield f"data: {json.dumps({'type': 'info', 'message': '开始调用XX Model (TripAdvisor)...', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                for chunk in debug_tripadvisermodel_stream(query):
+                yield make_message('info', '开始调用XX Model (TripAdvisor)...')
+                for chunk in debug_tripadvisermodel_stream(query, start_time):
                     yield chunk
             else:
                 error_msg = f'未知模型: {model_name}'
                 logging.error(error_msg)
-                yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-                
+                yield make_message('error', error_msg)
+
         except Exception as e:
             error_traceback = traceback.format_exc()
             logging.error(f'debug_model错误: {str(e)}\n{error_traceback}')
-            yield f"data: {json.dumps({'type': 'error', 'message': f'错误: {str(e)}', 'traceback': error_traceback, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-    
+            yield make_message('error', f'错误: {str(e)}', traceback=error_traceback)
+
     return Response(generate(), mimetype='text/event-stream', headers={
         'Cache-Control': 'no-cache',
         'X-Accel-Buffering': 'no'
     })
 
 
-def debug_ourmodel_stream(query: str):
+def debug_ourmodel_stream(query: str, start_time: float):
     """流式调用ourmodel，实时输出stdout/stderr"""
+
+    def make_message(msg_type, message, **kwargs):
+        """生成带耗时信息的消息"""
+        elapsed = round(time.time() - start_time, 2)
+        data = {
+            'type': msg_type,
+            'message': message,
+            'timestamp': datetime.now().isoformat(),
+            'elapsed': elapsed,
+            **kwargs
+        }
+        return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
     process = None
     try:
         python_script = "../ItineraryAgent-master/planner_checker_system.py"
         process = subprocess.Popen(
-            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
+            ['uv', 'run', 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # 合并stderr到stdout
             text=True,
@@ -522,7 +549,7 @@ def debug_ourmodel_stream(query: str):
             bufsize=0,  # 无缓冲
             universal_newlines=True
         )
-           
+
         # 实时读取输出
         for line in iter(process.stdout.readline, ''):
             if line:
@@ -536,38 +563,51 @@ def debug_ourmodel_stream(query: str):
                     msg_type = 'warning'
                 elif 'info' in line_lower or 'debug' in line_lower:
                     msg_type = 'info'
-                
-                yield f"data: {json.dumps({'type': msg_type, 'message': line, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-        
+
+                yield make_message(msg_type, line)
+
         process.wait()
-        
+
         if process.returncode != 0:
             error_msg = f'进程退出码: {process.returncode}'
             logging.error(f'debug_ourmodel_stream: {error_msg}')
-            yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+            yield make_message('error', error_msg)
         else:
-            yield f"data: {json.dumps({'type': 'done', 'message': '模型执行完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-            
+            yield make_message('done', '模型执行完成', total_elapsed=round(time.time() - start_time, 2))
+
     except subprocess.TimeoutExpired:
         if process:
             kill_proc_tree(process.pid)
         logging.error('debug_ourmodel_stream: 模型执行超时')
-        yield f"data: {json.dumps({'type': 'error', 'message': '模型执行超时', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        yield make_message('error', '模型执行超时')
     except Exception as e:
         if process:
             kill_proc_tree(process.pid)
         error_traceback = traceback.format_exc()
         logging.error(f'debug_ourmodel_stream错误: {str(e)}\n{error_traceback}')
-        yield f"data: {json.dumps({'type': 'error', 'message': f'错误: {str(e)}', 'traceback': error_traceback, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        yield make_message('error', f'错误: {str(e)}', traceback=error_traceback)
 
 
-def debug_tripadvisermodel_stream(query: str):
+def debug_tripadvisermodel_stream(query: str, start_time: float):
     """流式调用tripadvisermodel，实时输出stdout/stderr"""
+
+    def make_message(msg_type, message, **kwargs):
+        """生成带耗时信息的消息"""
+        elapsed = round(time.time() - start_time, 2)
+        data = {
+            'type': msg_type,
+            'message': message,
+            'timestamp': datetime.now().isoformat(),
+            'elapsed': elapsed,
+            **kwargs
+        }
+        return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
     process = None
     try:
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
         process = subprocess.Popen(
-            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
+            ['uv', 'run', 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # 合并stderr到stdout
             text=True,
@@ -576,7 +616,7 @@ def debug_tripadvisermodel_stream(query: str):
             bufsize=0,  # 无缓冲
             universal_newlines=True
         )
-        
+
         # 实时读取输出
         for line in iter(process.stdout.readline, ''):
             if line:
@@ -590,29 +630,29 @@ def debug_tripadvisermodel_stream(query: str):
                     msg_type = 'warning'
                 elif 'info' in line_lower or 'debug' in line_lower:
                     msg_type = 'info'
-                
-                yield f"data: {json.dumps({'type': msg_type, 'message': line, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-        
+
+                yield make_message(msg_type, line)
+
         process.wait()
-        
+
         if process.returncode != 0:
             error_msg = f'进程退出码: {process.returncode}'
             logging.error(f'debug_tripadvisermodel_stream: {error_msg}')
-            yield f"data: {json.dumps({'type': 'error', 'message': error_msg, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+            yield make_message('error', error_msg)
         else:
-            yield f"data: {json.dumps({'type': 'done', 'message': '模型执行完成', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
-            
+            yield make_message('done', '模型执行完成', total_elapsed=round(time.time() - start_time, 2))
+
     except subprocess.TimeoutExpired:
         if process:
             kill_proc_tree(process.pid)
         logging.error('debug_tripadvisermodel_stream: 模型执行超时')
-        yield f"data: {json.dumps({'type': 'error', 'message': '模型执行超时', 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        yield make_message('error', '模型执行超时')
     except Exception as e:
         if process:
             kill_proc_tree(process.pid)
         error_traceback = traceback.format_exc()
         logging.error(f'debug_tripadvisermodel_stream错误: {str(e)}\n{error_traceback}')
-        yield f"data: {json.dumps({'type': 'error', 'message': f'错误: {str(e)}', 'traceback': error_traceback, 'timestamp': datetime.now().isoformat()}, ensure_ascii=False)}\n\n"
+        yield make_message('error', f'错误: {str(e)}', traceback=error_traceback)
 
 
 
@@ -639,9 +679,9 @@ def ask_tripadvisermodel(messages) -> dict:
         query = messages
         python_script = "../TravelPlanner-master/agents/tool_agents.py"
         
-        print("exec command: ", ' '.join(['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query]))
+        print("exec command: ", ' '.join(['uv', 'run', 'python', python_script, query]))
         process = subprocess.Popen(
-            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query],
+            ['uv', 'run', 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -694,7 +734,7 @@ def ask_ourmodel(messages) -> dict:
         
         # 使用列表形式传递命令
         process = subprocess.Popen(
-            ['conda', 'run', '-n', ACTIVE_CONDA_ENV, 'python', python_script, query],
+            ['uv', 'run', 'python', python_script, query],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
