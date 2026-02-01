@@ -29,11 +29,29 @@ import platform
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 import uuid
+import threading
 executor = ThreadPoolExecutor(max_workers=10)
 
 # Task storage for async polling mechanism
-# {task_id: {status: "pending"|"running"|"completed"|"failed", result: {...}, error: str, model_type: str}}
+# {task_id: {status: "pending"|"running"|"completed"|"failed", result: {...}, error: str, model_type: str, created_at: float}}
 tasks = {}
+tasks_lock = threading.Lock()  # 线程安全锁
+
+def cleanup_old_tasks():
+    """Remove tasks older than 1 hour to prevent memory leak"""
+    current_time = time.time()
+    # First pass: identify expired tasks without lock
+    expired_ids = []
+    for task_id, task in list(tasks.items()):  # list() to avoid RuntimeError
+        if current_time - task.get('created_at', 0) > 3600:  # 1 hour
+            expired_ids.append(task_id)
+
+    # Second pass: delete with lock (quick operation)
+    if expired_ids:
+        with tasks_lock:
+            for task_id in expired_ids:
+                tasks.pop(task_id, None)  # pop with default to avoid KeyError
+        logging.info(f"Cleaned up {len(expired_ids)} expired tasks")
 from flask_migrate import Migrate
 import hashlib  # 添加到文件顶部的导入部分
 import sys
@@ -260,6 +278,9 @@ def submit_task():
     Submit a task for async processing.
     Returns task_id immediately, task runs in background.
     """
+    # Clean up old tasks periodically
+    cleanup_old_tasks()
+
     data = request.json
     model_type = data.get('model_type')  # 'gpt', 'ourmodel', 'xxmodel'
     query = data.get('query')
@@ -269,12 +290,14 @@ def submit_task():
         return jsonify({'error': 'Invalid model_type'}), 400
 
     task_id = str(uuid.uuid4())
-    tasks[task_id] = {
-        'status': 'pending',
-        'result': None,
-        'error': None,
-        'model_type': model_type
-    }
+    with tasks_lock:
+        tasks[task_id] = {
+            'status': 'pending',
+            'result': None,
+            'error': None,
+            'model_type': model_type,
+            'created_at': time.time()
+        }
 
     # Submit task to thread pool
     executor.submit(execute_task, task_id, model_type, query, conversation_id)
@@ -288,16 +311,17 @@ def task_status(task_id):
     Query task status and result.
     Returns: {status: "pending"|"running"|"completed"|"failed", result?: {...}, error?: str}
     """
-    if task_id not in tasks:
-        return jsonify({'error': 'Task not found'}), 404
+    with tasks_lock:
+        if task_id not in tasks:
+            return jsonify({'error': 'Task not found'}), 404
 
-    task = tasks[task_id]
-    response = {'status': task['status']}
+        task = tasks[task_id]
+        response = {'status': task['status']}
 
-    if task['status'] == 'completed':
-        response['result'] = task['result']
-    elif task['status'] == 'failed':
-        response['error'] = task['error']
+        if task['status'] == 'completed':
+            response['result'] = task['result']
+        elif task['status'] == 'failed':
+            response['error'] = task['error']
 
     return jsonify(response)
 
@@ -307,7 +331,8 @@ def execute_task(task_id, model_type, query, conversation_id):
     Execute model task in background thread.
     Updates tasks dict with result or error.
     """
-    tasks[task_id]['status'] = 'running'
+    with tasks_lock:
+        tasks[task_id]['status'] = 'running'
 
     # Ensure conversation_id is int
     if conversation_id is not None:
@@ -330,13 +355,14 @@ def execute_task(task_id, model_type, query, conversation_id):
             restaurant_rating = re.search(r'Restaurant Average Rating: (\d)/5', gpt_response)
             overall_rating = re.search(r'Overall Rating: (\d)/5', gpt_response)
 
-            tasks[task_id]['result'] = {
-                'gpt_response': gpt_response,
-                'attractionsAvgRating': attractions_rating.group(1) if attractions_rating else None,
-                'restaurantAvgRating': restaurant_rating.group(1) if restaurant_rating else None,
-                'accommodationRating': accommodation_rating.group(1) if accommodation_rating else None,
-                'overall_rating': overall_rating.group(1) if overall_rating else None,
-            }
+            with tasks_lock:
+                tasks[task_id]['result'] = {
+                    'gpt_response': gpt_response,
+                    'attractionsAvgRating': attractions_rating.group(1) if attractions_rating else None,
+                    'restaurantAvgRating': restaurant_rating.group(1) if restaurant_rating else None,
+                    'accommodationRating': accommodation_rating.group(1) if accommodation_rating else None,
+                    'overall_rating': overall_rating.group(1) if overall_rating else None,
+                }
 
             # Save to database in fresh app context
             if conversation_id:
@@ -357,14 +383,15 @@ def execute_task(task_id, model_type, query, conversation_id):
             our_response_rating = our_response.get("average_rating", {})
             expense_info = our_response.get("expense_info", {})
 
-            tasks[task_id]['result'] = {
-                'our_response': our_response_content,
-                'attractionsAvgRating': our_response_rating.get("Attractions"),
-                'restaurantAvgRating': our_response_rating.get("Restaurants"),
-                'accommodationRating': our_response_rating.get("Accommodations"),
-                'overall_rating': our_response_rating.get("Overall"),
-                'expense_info': expense_info
-            }
+            with tasks_lock:
+                tasks[task_id]['result'] = {
+                    'our_response': our_response_content,
+                    'attractionsAvgRating': our_response_rating.get("Attractions"),
+                    'restaurantAvgRating': our_response_rating.get("Restaurants"),
+                    'accommodationRating': our_response_rating.get("Accommodations"),
+                    'overall_rating': our_response_rating.get("Overall"),
+                    'expense_info': expense_info
+                }
 
             # Save to database in fresh app context
             if conversation_id:
@@ -391,14 +418,15 @@ def execute_task(task_id, model_type, query, conversation_id):
             trip_response_rating = trip_response.get("average_rating", {})
             expense_info = trip_response.get("expense_info", {})
 
-            tasks[task_id]['result'] = {
-                'xxmodel_response': trip_response_content,
-                'attractionsAvgRating': trip_response_rating.get("Attractions"),
-                'restaurantAvgRating': trip_response_rating.get("Restaurants"),
-                'accommodationRating': trip_response_rating.get("Accommodations"),
-                'overall_rating': trip_response_rating.get("Overall"),
-                'expense_info': expense_info
-            }
+            with tasks_lock:
+                tasks[task_id]['result'] = {
+                    'xxmodel_response': trip_response_content,
+                    'attractionsAvgRating': trip_response_rating.get("Attractions"),
+                    'restaurantAvgRating': trip_response_rating.get("Restaurants"),
+                    'accommodationRating': trip_response_rating.get("Accommodations"),
+                    'overall_rating': trip_response_rating.get("Overall"),
+                    'expense_info': expense_info
+                }
 
             # Save to database in fresh app context
             if conversation_id:
@@ -417,13 +445,15 @@ def execute_task(task_id, model_type, query, conversation_id):
                     else:
                         logging.warning(f"Task {task_id}: Conversation {conversation_id} not found")
 
-        tasks[task_id]['status'] = 'completed'
+        with tasks_lock:
+            tasks[task_id]['status'] = 'completed'
 
     except Exception as e:
         error_traceback = traceback.format_exc()
         logging.error(f"Task {task_id} failed: {str(e)}\n{error_traceback}")
-        tasks[task_id]['status'] = 'failed'
-        tasks[task_id]['error'] = str(e)
+        with tasks_lock:
+            tasks[task_id]['status'] = 'failed'
+            tasks[task_id]['error'] = str(e)
 
 
 # ============ Original Sync Endpoints (kept for backward compatibility) ============
