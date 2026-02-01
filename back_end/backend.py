@@ -813,10 +813,11 @@ def save_model_output(query: str, stdout: str, stderr: str, model_name: str) -> 
 if __name__ == '__main__':
     # print(parse_query("Plan me a trip from Los Angeles to Phoenix from 1 May 2025 to 10 May2025 with a budget of 900 usd with a duration of 11 days"))
     app.run(
-        debug=DEBUG,
+        debug=True,
         threaded=True,
         host=BACKEND_HOST,
-        port=BACKEND_PORT
+        port=BACKEND_PORT,
+        use_reloader=True
     )
 
 

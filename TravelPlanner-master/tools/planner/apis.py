@@ -2,11 +2,11 @@ from datetime import datetime
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from agents.prompts import planner_agent_prompt, cot_planner_agent_prompt, react_planner_agent_prompt,reflect_prompt,react_reflect_planner_agent_prompt, REFLECTION_HEADER
-from langchain.chat_models import ChatOpenAI
-from langchain.llms.base import BaseLLM
-from langchain.schema import (
+from langchain_openai import ChatOpenAI
+from langchain_core.language_models import BaseLLM
+from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage
