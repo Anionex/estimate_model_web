@@ -1,4 +1,3 @@
-import json
 from evaluation.schemas import DIMENSION_DESCRIPTIONS
 
 

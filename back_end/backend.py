@@ -30,6 +30,12 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 import uuid
 import threading
+from dataclasses import asdict
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from evaluation.schemas import EvalInput, DEFAULT_DIMENSIONS, DIMENSION_DESCRIPTIONS
+from evaluation.scorer import ItineraryScorer
+from evaluation.comparator import ItineraryComparator
 executor = ThreadPoolExecutor(max_workers=10)
 
 # Task storage for async polling mechanism
@@ -748,7 +754,7 @@ def debug_ourmodel_stream(query: str, start_time: float):
 
     process = None
     try:
-        python_script = "../ItineraryAgent-master/planner_checker_system.py"
+        python_script = "../TravelDesigner/run.py"
         process = subprocess.Popen(
             ['uv', 'run', 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
             stdout=subprocess.PIPE,
@@ -940,8 +946,8 @@ def ask_ourmodel(messages) -> dict:
         query = next(item["content"] for item in messages if item["role"] == "user")   
         print("input_data: ", query)
         
-        python_script = "../ItineraryAgent-master/planner_checker_system.py"
-        
+        python_script = "../TravelDesigner/run.py"
+
         # 使用列表形式传递命令
         process = subprocess.Popen(
             ['uv', 'run', 'python', python_script, query],
@@ -1022,11 +1028,7 @@ def save_model_output(query: str, stdout: str, stderr: str, model_name: str) -> 
 
 # ============ Evaluation Endpoints ============
 
-sys.path.insert(0, ROOT_DIR)
-from evaluation.schemas import EvalInput, DEFAULT_DIMENSIONS, DIMENSION_DESCRIPTIONS
-from evaluation.scorer import ItineraryScorer
-from evaluation.comparator import ItineraryComparator
-from dataclasses import asdict
+MAX_EVAL_ITINERARIES = 10
 
 
 @app.route('/eval/dimensions', methods=['GET'])
@@ -1043,6 +1045,8 @@ def eval_score():
     itineraries = data.get('itineraries', [])
     if not itineraries:
         return jsonify({'error': 'No itineraries provided'}), 400
+    if len(itineraries) > MAX_EVAL_ITINERARIES:
+        return jsonify({'error': f'Too many itineraries (max {MAX_EVAL_ITINERARIES})'}), 400
 
     task_id = str(uuid.uuid4())
     with tasks_lock:
@@ -1097,6 +1101,8 @@ def eval_compare():
     itineraries = data.get('itineraries', [])
     if len(itineraries) < 2:
         return jsonify({'error': 'Need at least 2 itineraries to compare'}), 400
+    if len(itineraries) > MAX_EVAL_ITINERARIES:
+        return jsonify({'error': f'Too many itineraries (max {MAX_EVAL_ITINERARIES})'}), 400
 
     task_id = str(uuid.uuid4())
     with tasks_lock:

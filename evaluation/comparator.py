@@ -1,3 +1,4 @@
+import logging
 import sys
 import os
 import random
@@ -14,6 +15,8 @@ from evaluation.schemas import (
     DEFAULT_DIMENSIONS,
 )
 from evaluation.prompts import build_comparison_prompts
+
+logger = logging.getLogger(__name__)
 
 
 class ItineraryComparator:
@@ -68,6 +71,14 @@ class ItineraryComparator:
                     winner=winner,
                     justification=entry.get("justification", ""),
                 )
+            )
+
+        returned_dims = {r.dimension for r in results}
+        missing = set(dims) - returned_dims
+        if missing:
+            logger.warning(
+                "LLM omitted dimensions %s for pair %s vs %s",
+                missing, a.id, b.id,
             )
 
         return results

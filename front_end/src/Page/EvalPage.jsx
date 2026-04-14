@@ -34,10 +34,11 @@ function EvalPage() {
   // Shared state
   const [dimensions, setDimensions] = useState([]);
   const [selectedDims, setSelectedDims] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const pollRef = useRef(null);
+  const scorePollRef = useRef(null);
+  const comparePollRef = useRef(null);
 
   // Score tab state
+  const [scoreLoading, setScoreLoading] = useState(false);
   const [scoreRequest, setScoreRequest] = useState("");
   const [scoreItineraries, setScoreItineraries] = useState([
     { id: "model-A", itinerary: "" },
@@ -45,6 +46,7 @@ function EvalPage() {
   const [scoreResults, setScoreResults] = useState(null);
 
   // Compare tab state
+  const [compareLoading, setCompareLoading] = useState(false);
   const [compareRequest, setCompareRequest] = useState("");
   const [compareItineraries, setCompareItineraries] = useState([
     { id: "model-A", itinerary: "" },
@@ -64,12 +66,13 @@ function EvalPage() {
       .catch((err) => console.error("Failed to fetch dimensions:", err));
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (scorePollRef.current) clearInterval(scorePollRef.current);
+      if (comparePollRef.current) clearInterval(comparePollRef.current);
     };
   }, []);
 
   // ============ Poll Helper ============
-  function pollTaskStatus(taskId, onComplete, onError) {
+  function pollTaskStatus(pollRef, taskId, onComplete, onError) {
     pollRef.current = setInterval(async () => {
       try {
         const res = await axios.get(
@@ -114,7 +117,7 @@ function EvalPage() {
   }
 
   async function runScore() {
-    setLoading(true);
+    setScoreLoading(true);
     setScoreResults(null);
     try {
       const payload = {
@@ -132,19 +135,20 @@ function EvalPage() {
       );
       const taskId = res.data.task_id;
       pollTaskStatus(
+        scorePollRef,
         taskId,
         (result) => {
           setScoreResults(result);
-          setLoading(false);
+          setScoreLoading(false);
         },
         (error) => {
           alert("Evaluation failed: " + error);
-          setLoading(false);
+          setScoreLoading(false);
         }
       );
     } catch (err) {
       alert("Failed to submit: " + err.message);
-      setLoading(false);
+      setScoreLoading(false);
     }
   }
 
@@ -169,7 +173,7 @@ function EvalPage() {
   }
 
   async function runCompare() {
-    setLoading(true);
+    setCompareLoading(true);
     setCompareResults(null);
     try {
       const payload = {
@@ -187,19 +191,20 @@ function EvalPage() {
       );
       const taskId = res.data.task_id;
       pollTaskStatus(
+        comparePollRef,
         taskId,
         (result) => {
           setCompareResults(result);
-          setLoading(false);
+          setCompareLoading(false);
         },
         (error) => {
           alert("Comparison failed: " + error);
-          setLoading(false);
+          setCompareLoading(false);
         }
       );
     } catch (err) {
       alert("Failed to submit: " + err.message);
-      setLoading(false);
+      setCompareLoading(false);
     }
   }
 
@@ -437,7 +442,7 @@ function EvalPage() {
               color="primary"
               onPress={runScore}
               isDisabled={
-                loading ||
+                scoreLoading ||
                 !scoreRequest.trim() ||
                 scoreItineraries.some((it) => !it.itinerary.trim()) ||
                 selectedDims.length === 0
@@ -445,7 +450,7 @@ function EvalPage() {
               size="lg"
               className="mt-2"
             >
-              {loading ? (
+              {scoreLoading ? (
                 <>
                   <CircularProgress size="sm" className="mr-2" /> Evaluating...
                 </>
@@ -487,7 +492,7 @@ function EvalPage() {
               color="primary"
               onPress={runCompare}
               isDisabled={
-                loading ||
+                compareLoading ||
                 !compareRequest.trim() ||
                 compareItineraries.some((it) => !it.itinerary.trim()) ||
                 selectedDims.length === 0
@@ -495,7 +500,7 @@ function EvalPage() {
               size="lg"
               className="mt-2"
             >
-              {loading ? (
+              {compareLoading ? (
                 <>
                   <CircularProgress size="sm" className="mr-2" /> Comparing...
                 </>

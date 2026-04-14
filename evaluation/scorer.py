@@ -1,3 +1,4 @@
+import logging
 import sys
 import os
 
@@ -11,6 +12,8 @@ from evaluation.schemas import (
     DEFAULT_DIMENSIONS,
 )
 from evaluation.prompts import build_scoring_prompts
+
+logger = logging.getLogger(__name__)
 
 
 class ItineraryScorer:
@@ -36,6 +39,14 @@ class ItineraryScorer:
                     score=score_val,
                     justification=entry.get("justification", ""),
                 )
+            )
+
+        returned_dims = {s.dimension for s in scores}
+        missing = set(self.dimensions) - returned_dims
+        if missing:
+            logger.warning(
+                "LLM omitted dimensions %s for itinerary %s",
+                missing, eval_input.id,
             )
 
         aggregate = (
