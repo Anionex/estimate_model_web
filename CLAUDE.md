@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TravelDesigner evaluation platform — compares three AI travel planning models (GPT-4, self-developed ItineraryAgent, TravelPlanner baseline) side-by-side. Users submit trip queries, the system runs all three models in parallel, displays results, and collects multi-dimensional ratings (detail, route rationality, representativeness, overall). Data is stored in MySQL for analysis.
+TravelDesigner evaluation platform — compares three AI travel planning models (GPT-5, self-developed TravelDesigner, TravelPlanner baseline) side-by-side. Users submit trip queries, the system runs all three models in parallel, displays results, and collects multi-dimensional ratings (detail, route rationality, representativeness, overall). Data is stored in MySQL for analysis.
 
 ## Commands
 
@@ -36,9 +36,21 @@ uv sync              # install Python dependencies (uses uv, not pip)
 **Backend:** Flask, single-file app (`back_end/backend.py`), Flask-SQLAlchemy with MySQL (`modeltest` database), Flask-Migrate for schema management.
 
 **AI Models (run in parallel via ThreadPoolExecutor):**
-- Plan 1 (GPT-4): Direct OpenAI API call
-- Plan 2 (ItineraryAgent): Self-developed agent in `ItineraryAgent-master/`, uses LangChain + Google Maps + Amadeus APIs
+- Plan 1 (GPT-5): Direct OpenAI API call
+- Plan 2 (TravelDesigner): PPTAgent-architecture agent in `TravelDesigner/`, uses OpenAI function calling + Google Maps + Amadeus APIs
 - Plan 3 (TravelPlanner): Baseline model in `TravelPlanner-master/`, invoked as subprocess with conda environment
+
+**TravelDesigner Agent Architecture (PPTAgent pattern):**
+- `Agent` base class with `action()` / `execute()` / `loop()` pattern
+- `AgentEnv` manages tool registration (auto JSON Schema from type hints) and dispatch
+- `LLMClient` wraps OpenAI function calling API (non-streaming, structured `tool_calls`)
+- YAML role configs in `TravelDesigner/roles/` define system prompts and toolset per agent
+- `TravelAgent` gathers info via 6 tools (flights, hotels, attractions, restaurants, distance, web search)
+- `CheckerAgent` wraps existing `PlanChecker` for iterative validation (budget, ratings, structure)
+- `TravelOrchestrator` coordinates planner-checker loop (max 3 iterations)
+- Entry point: `TravelDesigner/run.py`, invoked by backend as subprocess
+
+**Legacy ItineraryAgent** (`ItineraryAgent-master/`): Old agent using custom ReACT text parsing. Replaced by TravelDesigner but kept for reference.
 
 **Async task system:** Long-running model calls use a polling pattern — `POST /submit_task` returns a `task_id`, frontend polls `GET /task_status/<task_id>`. Tasks are stored in-memory dict with thread locks, auto-cleaned after 1 hour.
 
@@ -50,13 +62,22 @@ uv sync              # install Python dependencies (uses uv, not pip)
 - `front_end/src/Page/HomePage.jsx` — main UI: query input, parallel model display, rating forms
 - `front_end/src/ApiUtill.js` — API base URL configuration (reads from config.yaml)
 - `utils/chat_model.py` — shared LLM wrapper used by backend and agents
-- `ItineraryAgent-master/planner_checker_system.py` — ItineraryAgent entry point
+- `utils/web_apis.py` — tool implementations: Google Maps, Amadeus, Serper APIs (with disk caching)
+- `utils/plan_checker.py` — multi-step LLM plan validation (budget, reasonability, ratings, POI count)
+- `TravelDesigner/` — PPTAgent-architecture travel agent (see below)
+- `TravelDesigner/run.py` — TravelDesigner entry point (subprocess interface)
+- `TravelDesigner/agent.py` — Agent base class (action/execute/loop)
+- `TravelDesigner/agent_env.py` — AgentEnv: tool registration with auto JSON Schema
+- `TravelDesigner/llm_client.py` — OpenAI function calling client
+- `TravelDesigner/orchestrator.py` — planner-checker loop coordinator
+- `TravelDesigner/tool_wrappers.py` — typed wrappers for utils/web_apis.py functions
+- `TravelDesigner/roles/*.yaml` — YAML role configs (system prompts, toolsets)
 - `TravelPlanner-master/` — invoked as a separate process under its own conda env
 
 ## Environment Variables (.env)
 
-Required: `OPENAI_API_KEY`, `DB_PASSWORD`
-Optional: `OPENAI_API_BASE`, `GOOGLE_API_KEY`, `SERPER_API_KEY`, `LANGFUSE_SECRET_KEY`, `DEBUG`
+Required: `OPENAI_API_KEY`, `OPENAI_API_BASE`, `DB_PASSWORD`, `GOOGLE_MAPS_API_KEY`, `AMADEUS_API_KEY`, `AMADEUS_API_SECRET`, `SERPER_API_KEY`
+Optional: `OPENAI_API_MODEL` (default `gpt-4o`), `GPT_BASELINE` (default `gpt-5`), `LANGFUSE_SECRET_KEY`, `DEBUG`
 
 DB defaults: user `modeltest` (Unix) / `root` (Windows), database `modeltest`, host `localhost`.
 
