@@ -23,4 +23,7 @@ export default class ApiUtill{
     static url_rating="rate"
     static url_submit_task="submit_task"
     static url_task_status="task_status"
+    static url_eval_score="eval/score"
+    static url_eval_compare="eval/compare"
+    static url_eval_dimensions="eval/dimensions"
 }

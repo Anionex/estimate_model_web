@@ -15,6 +15,7 @@ export default function NavBar() {
 
   const menuItems = [
     { name: "Home Page", href: "/" },
+    { name: "Evaluation", href: "/eval" },
     { name: "About Us", href: "/about" },
   ];
 
@@ -38,6 +39,11 @@ export default function NavBar() {
         <NavbarItem>
           <Button as={Link} color="primary" href="/" variant="flat">
             Home Page
+          </Button>
+        </NavbarItem>
+        <NavbarItem>
+          <Button as={Link} color="primary" href="/eval" variant="flat">
+            Evaluation
           </Button>
         </NavbarItem>
         <NavbarItem>

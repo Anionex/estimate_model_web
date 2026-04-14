@@ -30,6 +30,12 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 import uuid
 import threading
+from dataclasses import asdict
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from evaluation.schemas import EvalInput, DEFAULT_DIMENSIONS, DIMENSION_DESCRIPTIONS
+from evaluation.scorer import ItineraryScorer
+from evaluation.comparator import ItineraryComparator
 executor = ThreadPoolExecutor(max_workers=10)
 
 # Task storage for async polling mechanism
@@ -748,7 +754,7 @@ def debug_ourmodel_stream(query: str, start_time: float):
 
     process = None
     try:
-        python_script = "../ItineraryAgent-master/planner_checker_system.py"
+        python_script = "../TravelDesigner/run.py"
         process = subprocess.Popen(
             ['uv', 'run', 'python', '-u', python_script, query],  # -u 参数启用无缓冲输出
             stdout=subprocess.PIPE,
@@ -940,8 +946,8 @@ def ask_ourmodel(messages) -> dict:
         query = next(item["content"] for item in messages if item["role"] == "user")   
         print("input_data: ", query)
         
-        python_script = "../ItineraryAgent-master/planner_checker_system.py"
-        
+        python_script = "../TravelDesigner/run.py"
+
         # 使用列表形式传递命令
         process = subprocess.Popen(
             ['uv', 'run', 'python', python_script, query],
@@ -1019,6 +1025,128 @@ def save_model_output(query: str, stdout: str, stderr: str, model_name: str) -> 
         with open(stderr_filename, "w", encoding="utf-8") as f:
             f.write(f"Query: {query}\n\n")
             f.write(stderr)
+
+# ============ Evaluation Endpoints ============
+
+MAX_EVAL_ITINERARIES = 10
+
+
+@app.route('/eval/dimensions', methods=['GET'])
+def eval_dimensions():
+    dims = [{"name": k, "description": v} for k, v in DIMENSION_DESCRIPTIONS.items()]
+    return jsonify({"dimensions": dims})
+
+
+@app.route('/eval/score', methods=['POST'])
+def eval_score():
+    cleanup_old_tasks()
+    data = request.json
+
+    itineraries = data.get('itineraries', [])
+    if not itineraries:
+        return jsonify({'error': 'No itineraries provided'}), 400
+    if len(itineraries) > MAX_EVAL_ITINERARIES:
+        return jsonify({'error': f'Too many itineraries (max {MAX_EVAL_ITINERARIES})'}), 400
+
+    task_id = str(uuid.uuid4())
+    with tasks_lock:
+        tasks[task_id] = {
+            'status': 'pending',
+            'result': None,
+            'error': None,
+            'model_type': 'eval_score',
+            'created_at': time.time(),
+        }
+
+    executor.submit(execute_eval_score, task_id, data)
+    return jsonify({'task_id': task_id})
+
+
+def execute_eval_score(task_id, data):
+    with tasks_lock:
+        tasks[task_id]['status'] = 'running'
+
+    try:
+        dimensions = data.get('dimensions', DEFAULT_DIMENSIONS)
+        inputs = [
+            EvalInput(
+                id=entry['id'],
+                user_request=entry.get('user_request', ''),
+                itinerary=entry.get('itinerary', ''),
+                metadata=entry.get('metadata', {}),
+            )
+            for entry in data['itineraries']
+        ]
+
+        scorer = ItineraryScorer(dimensions=dimensions)
+        results = scorer.score_batch(inputs)
+
+        with tasks_lock:
+            tasks[task_id]['status'] = 'completed'
+            tasks[task_id]['result'] = {
+                'evaluations': [asdict(r) for r in results],
+            }
+    except Exception as e:
+        logging.exception(f"Eval score task {task_id} failed")
+        with tasks_lock:
+            tasks[task_id]['status'] = 'failed'
+            tasks[task_id]['error'] = str(e)
+
+
+@app.route('/eval/compare', methods=['POST'])
+def eval_compare():
+    cleanup_old_tasks()
+    data = request.json
+
+    itineraries = data.get('itineraries', [])
+    if len(itineraries) < 2:
+        return jsonify({'error': 'Need at least 2 itineraries to compare'}), 400
+    if len(itineraries) > MAX_EVAL_ITINERARIES:
+        return jsonify({'error': f'Too many itineraries (max {MAX_EVAL_ITINERARIES})'}), 400
+
+    task_id = str(uuid.uuid4())
+    with tasks_lock:
+        tasks[task_id] = {
+            'status': 'pending',
+            'result': None,
+            'error': None,
+            'model_type': 'eval_compare',
+            'created_at': time.time(),
+        }
+
+    executor.submit(execute_eval_compare, task_id, data)
+    return jsonify({'task_id': task_id})
+
+
+def execute_eval_compare(task_id, data):
+    with tasks_lock:
+        tasks[task_id]['status'] = 'running'
+
+    try:
+        dimensions = data.get('dimensions', DEFAULT_DIMENSIONS)
+        user_request = data.get('user_request', '')
+        inputs = [
+            EvalInput(
+                id=entry['id'],
+                user_request=user_request,
+                itinerary=entry.get('itinerary', ''),
+                metadata=entry.get('metadata', {}),
+            )
+            for entry in data['itineraries']
+        ]
+
+        comparator = ItineraryComparator(dimensions=dimensions)
+        result = comparator.compare_all(user_request, inputs, dimensions)
+
+        with tasks_lock:
+            tasks[task_id]['status'] = 'completed'
+            tasks[task_id]['result'] = asdict(result)
+    except Exception as e:
+        logging.exception(f"Eval compare task {task_id} failed")
+        with tasks_lock:
+            tasks[task_id]['status'] = 'failed'
+            tasks[task_id]['error'] = str(e)
+
 
 if __name__ == '__main__':
     # print(parse_query("Plan me a trip from Los Angeles to Phoenix from 1 May 2025 to 10 May2025 with a budget of 900 usd with a duration of 11 days"))
