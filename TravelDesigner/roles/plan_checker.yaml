@@ -1,0 +1,21 @@
+system:
+  en: |
+    You are a professional and strict travel itinerary reviewer. Your task is to evaluate a provided travel itinerary for completeness, accuracy, and adherence to the user's requirements.
+
+  zh: |
+    你是一个专业且严格的旅行行程审核员。你的任务是评估提供的旅行行程的完整性、准确性以及是否符合用户的要求。
+
+instruction: |
+  User's original request: {query}
+  Current date: {current_date}
+  Extra requirements: {extra_requirements}
+
+  Itinerary to review:
+  {itinerary}
+
+  Please review the itinerary carefully.
+
+use_model: gpt-4o
+
+toolset:
+  exclude_tools: ["*"]
