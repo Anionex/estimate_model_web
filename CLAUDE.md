@@ -81,6 +81,31 @@ Optional: `OPENAI_API_MODEL` (default `gpt-4o`), `GPT_BASELINE` (default `gpt-5`
 
 DB defaults: user `modeltest` (Unix) / `root` (Windows), database `modeltest`, host `localhost`.
 
+## Evaluation Framework
+
+Standalone `evaluation/` module for automated itinerary quality assessment using LLM-as-judge.
+
+**Two modes:**
+- **Score**: Evaluate itineraries independently on multiple dimensions (1-10 scale with justification)
+- **A/B Compare**: Pairwise comparison of itineraries with Copeland ranking aggregation
+
+**Default dimensions:** route_rationality, detail_level, representativeness, budget_reasonability, feasibility, personalization.
+
+**Three interfaces:**
+- **CLI**: `python -m evaluation.cli score|compare --config input.json [--json]`, `python -m evaluation.cli dimensions`
+- **API**: `POST /eval/score`, `POST /eval/compare` (async, reuses task polling), `GET /eval/dimensions`
+- **Frontend**: `/eval` page with Score and A/B Compare tabs
+
+**Key files:**
+- `evaluation/scorer.py` — `ItineraryScorer` class (single LLM call per itinerary for all dimensions)
+- `evaluation/comparator.py` — `ItineraryComparator` class (round-robin pairwise, position-bias mitigation via randomized A/B)
+- `evaluation/schemas.py` — dataclasses (`EvalInput`, `EvalResult`, `PairwiseResult`, `ABTestResult`) + dimension definitions
+- `evaluation/prompts.py` — LLM prompt templates with rubric-based dimension descriptions
+- `evaluation/cli.py` — CLI entry point
+- `front_end/src/Page/EvalPage.jsx` — frontend evaluation page
+
+**API limits:** max 10 itineraries per request (`MAX_EVAL_ITINERARIES`).
+
 ## Constraints
 
 - Query validation enforces: travel dates within 0–60 days from now, max 20-day trip duration
