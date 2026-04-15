@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TravelDesigner - PPTAgent-architecture travel planner.
+"""TravelDesigner - Modular agent-based travel planner.
 
 Usage:
     uv run python TravelDesigner/run.py "Plan a 3-day trip from New York to San Francisco..."

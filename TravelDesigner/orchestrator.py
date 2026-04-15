@@ -28,7 +28,7 @@ from .travel_agent import TravelAgent
 class TravelOrchestrator:
     """Coordinates the TravelAgent and CheckerAgent in a generate-check-revise loop.
 
-    This replaces planner_checker_system.py with the PPTAgent architecture.
+    This replaces planner_checker_system.py with the modular agent architecture.
     """
 
     def __init__(self, model: str = "gpt-4o", language: str | None = None) -> None:

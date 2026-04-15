@@ -1,4 +1,4 @@
-"""Agent base class following PPTAgent's action/execute/loop pattern."""
+"""Agent base class following the action/execute/loop pattern."""
 
 import os
 

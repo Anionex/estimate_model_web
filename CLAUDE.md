@@ -37,10 +37,10 @@ uv sync              # install Python dependencies (uses uv, not pip)
 
 **AI Models (run in parallel via ThreadPoolExecutor):**
 - Plan 1 (GPT-5): Direct OpenAI API call
-- Plan 2 (TravelDesigner): PPTAgent-architecture agent in `TravelDesigner/`, uses OpenAI function calling + Google Maps + Amadeus APIs
+- Plan 2 (TravelDesigner): Modular agent in `TravelDesigner/`, uses OpenAI function calling + Google Maps + Amadeus APIs
 - Plan 3 (TravelPlanner): Baseline model in `TravelPlanner-master/`, invoked as subprocess with conda environment
 
-**TravelDesigner Agent Architecture (PPTAgent pattern):**
+**TravelDesigner Agent Architecture:**
 - `Agent` base class with `action()` / `execute()` / `loop()` pattern
 - `AgentEnv` manages tool registration (auto JSON Schema from type hints) and dispatch
 - `LLMClient` wraps OpenAI function calling API (non-streaming, structured `tool_calls`)
@@ -64,7 +64,7 @@ uv sync              # install Python dependencies (uses uv, not pip)
 - `utils/chat_model.py` — shared LLM wrapper used by backend and agents
 - `utils/web_apis.py` — tool implementations: Google Maps, Amadeus, Serper APIs (with disk caching)
 - `utils/plan_checker.py` — multi-step LLM plan validation (budget, reasonability, ratings, POI count)
-- `TravelDesigner/` — PPTAgent-architecture travel agent (see below)
+- `TravelDesigner/` — Modular travel planning agent (see below)
 - `TravelDesigner/run.py` — TravelDesigner entry point (subprocess interface)
 - `TravelDesigner/agent.py` — Agent base class (action/execute/loop)
 - `TravelDesigner/agent_env.py` — AgentEnv: tool registration with auto JSON Schema

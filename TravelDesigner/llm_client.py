@@ -19,7 +19,7 @@ class LLMClient:
     """OpenAI-compatible LLM client with function calling.
 
     Replaces the text-completion approach in chat_model.py with structured
-    tool calling following the PPTAgent pattern.
+    tool calling following the modular agent pattern.
     """
 
     def __init__(self, model: str = "gpt-4o", temperature: float = 0) -> None:

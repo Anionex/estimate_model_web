@@ -12,7 +12,7 @@ class TravelAgent(Agent):
     """Travel planning agent that gathers information via tools and produces itineraries.
 
     Uses OpenAI function calling to decide which tools to invoke, following
-    the PPTAgent action/execute/loop pattern.
+    the action/execute/loop pattern.
     """
 
     def __init__(self, agent_env: AgentEnv, llm_client: LLMClient, language: str = "en") -> None:

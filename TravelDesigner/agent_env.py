@@ -1,4 +1,4 @@
-"""AgentEnv - Tool registration and dispatch following PPTAgent pattern."""
+"""AgentEnv - Tool registration and dispatch for modular agents."""
 
 import inspect
 import re
@@ -65,8 +65,8 @@ def _parse_docstring_params(docstring: str | None) -> dict[str, str]:
 class AgentEnv:
     """Manages tool registration and dispatch.
 
-    Following PPTAgent's AgentEnv pattern: tools are registered with auto-generated
-    JSON Schema from type hints, and dispatched to local Python functions.
+    Tools are registered with auto-generated JSON Schema from type hints,
+    and dispatched to local Python functions.
     """
 
     def __init__(self) -> None:

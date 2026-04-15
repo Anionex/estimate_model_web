@@ -13,7 +13,7 @@ from utils.plan_checker import PlanChecker
 
 
 class CheckerAgent:
-    """Wraps the existing PlanChecker into the PPTAgent architecture.
+    """Wraps the existing PlanChecker into the modular agent architecture.
 
     The checker does not use tools — it delegates to the battle-tested
     PlanChecker which performs multi-step LLM evaluation (budget check,

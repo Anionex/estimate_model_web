@@ -1,1 +1,1 @@
-"""TravelDesigner - Travel planning agent using PPTAgent architecture."""
+"""TravelDesigner - Modular travel planning agent."""
