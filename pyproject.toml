@@ -39,4 +39,5 @@ dependencies = [
     "tiktoken",
     "pandas",
     "tqdm",
+    "scipy>=1.17.1",
 ]
